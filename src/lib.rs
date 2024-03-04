@@ -1,14 +1,7 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+pub mod geometry;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub trait Generator<I> {
+    type Output;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+    fn generate(&self, input: I) -> Self::Output;
 }
