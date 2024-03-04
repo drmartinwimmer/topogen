@@ -9,7 +9,7 @@ pub struct Sphere<T, const D: usize> {
 }
 
 macro_rules! impl_sphere {
-    ($t:ty) => {
+    ($($t:ty),+) => {$(
         impl<const D: usize> Default for Sphere<$t, D> {
             fn default() -> Self {
                 Self {
@@ -31,8 +31,9 @@ macro_rules! impl_sphere {
                 radius <= self.radius * self.radius
             }
         }
-    };
+    )+};
 }
+impl_sphere!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64);
 
 #[derive(Debug)]
 pub struct Cube<T, const D: usize> {
@@ -40,7 +41,7 @@ pub struct Cube<T, const D: usize> {
     pub center: [T; D],
 }
 
-macro_rules! impl_cube {
+macro_rules! impl_cube_default {
     ($t:ty) => {
         impl<const D: usize> Default for Cube<$t, D> {
             fn default() -> Self {
@@ -50,7 +51,11 @@ macro_rules! impl_cube {
                 }
             }
         }
+    };
+}
 
+macro_rules! impl_cube_generator_signed {
+    ($t:ty) => {
         impl<const D: usize> Generator<[$t; D]> for Cube<$t, D> {
             type Output = bool;
 
@@ -64,16 +69,37 @@ macro_rules! impl_cube {
     };
 }
 
-macro_rules! impl_all {
-    ($($t:ty)+) => {
-        $(
-            impl_sphere!($t);
-            impl_cube!($t);
-        )+
-    }
+macro_rules! impl_cube_generator_unsigned {
+    ($t:ty) => {
+        impl<const D: usize> Generator<[$t; D]> for Cube<$t, D> {
+            type Output = bool;
+
+            fn generate(&self, point: [$t; D]) -> bool {
+                point
+                    .into_iter()
+                    .zip(self.center)
+                    .all(|(p, c)| 2 as $t * p - c <= self.side)
+            }
+        }
+    };
 }
 
-impl_all!(f32 f64 i8 i16 i32 i64);
+macro_rules! impl_cube_signed {
+    ($($t:ty),+) => {$(
+        impl_cube_default!($t);
+        impl_cube_generator_signed!($t);
+    )+};
+}
+
+macro_rules! impl_cube_unsigned {
+    ($($t:ty),+) => {$(
+        impl_cube_default!($t);
+        impl_cube_generator_unsigned!($t);
+    )+};
+}
+
+impl_cube_signed!(i8, i16, i32, i64, i128, isize, f32, f64);
+impl_cube_unsigned!(u8, u16, u32, u64, u128, usize);
 
 #[cfg(test)]
 mod tests {
