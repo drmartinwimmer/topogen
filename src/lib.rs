@@ -1,7 +1,7 @@
 pub mod geometry;
 pub mod ops;
 
-pub trait Generator<I> {
+pub trait Generator<I>: Sized {
     type Output;
 
     fn generate(&self, input: I) -> Self::Output;
