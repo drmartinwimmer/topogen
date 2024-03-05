@@ -2,7 +2,7 @@ use crate::geometry::bitmap::Cuboid;
 use crate::geometry::GeometricObject;
 use crate::Generator;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Sphere<T, const D: usize> {
     pub radius: T,
     pub center: [T; D],

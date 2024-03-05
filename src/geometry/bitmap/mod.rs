@@ -2,7 +2,7 @@ use crate::Generator;
 
 pub trait Bitmap<T, const D: usize>: Generator<[T; D], Output = bool> {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Cuboid<T, const D: usize> {
     pub sides: [T; D],
     pub center: [T; D],

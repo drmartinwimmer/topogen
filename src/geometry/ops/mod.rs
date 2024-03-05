@@ -1,6 +1,7 @@
 use super::Cartesian;
 use crate::Generator;
 
+#[derive(Debug, Clone)]
 pub struct Repeat<T, G: Cartesian<T, D>, const D: usize> {
     pub generator: G,
     pub center: [T; D],

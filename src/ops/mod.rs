@@ -1,5 +1,6 @@
 use super::Generator;
 
+#[derive(Debug, Clone)]
 pub struct MapOutput<G, F> {
     generator: G,
     mapper: F,
@@ -14,7 +15,7 @@ impl<G, F> MapOutput<G, F> {
 impl<G, F, I, O> Generator<I> for MapOutput<G, F>
 where
     G: Generator<I>,
-    F: Fn(G::Output) -> O,
+    F: Fn(G::Output) -> O + Clone,
 {
     type Output = O;
 
@@ -23,6 +24,7 @@ where
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct MapInput<G, F> {
     generator: G,
     mapper: F,
@@ -37,7 +39,7 @@ impl<G, F> MapInput<G, F> {
 impl<G, F, I, GI> Generator<I> for MapInput<G, F>
 where
     G: Generator<GI>,
-    F: Fn(I) -> GI,
+    F: Fn(I) -> GI + Clone,
 {
     type Output = G::Output;
 

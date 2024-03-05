@@ -6,7 +6,7 @@ use self::bitmap::Cuboid;
 use crate::Generator;
 use ops::Repeat;
 
-pub trait GeometricObject<T, const D: usize> {
+pub trait GeometricObject<T, const D: usize>: Sized + Clone {
     fn center(&self) -> [T; D];
     fn bounding_box(&self) -> Cuboid<T, D>;
     fn within(&self, point: [T; D]) -> bool;
