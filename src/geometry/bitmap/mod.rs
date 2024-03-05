@@ -3,39 +3,6 @@ use crate::Generator;
 pub trait Bitmap<T, const D: usize>: Generator<[T; D], Output = bool> {}
 
 #[derive(Debug)]
-pub struct Sphere<T, const D: usize> {
-    pub radius: T,
-    pub center: [T; D],
-}
-
-macro_rules! impl_sphere {
-    ($($t:ty),+) => {$(
-        impl<const D: usize> Default for Sphere<$t, D> {
-            fn default() -> Self {
-                Self {
-                    radius: 1 as $t,
-                    center: [<$t>::default(); D],
-                }
-            }
-        }
-
-        impl<const D: usize> Generator<[$t; D]> for Sphere<$t, D> {
-            type Output = bool;
-
-            fn generate(&self, point: [$t; D]) -> bool {
-                let radius: $t = point
-                    .into_iter()
-                    .zip(self.center)
-                    .map(|(p, c)| (p - c) * (p - c))
-                    .sum();
-                radius <= self.radius * self.radius
-            }
-        }
-    )+};
-}
-impl_sphere!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64);
-
-#[derive(Debug)]
 pub struct Cuboid<T, const D: usize> {
     pub sides: [T; D],
     pub center: [T; D],
@@ -103,69 +70,8 @@ impl_cuboid_unsigned!(u8, u16, u32, u64, u128, usize);
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        geometry::bitmap::{Cuboid, Sphere},
-        Generator,
-    };
-
-    #[test]
-    fn generates_sphere() {
-        let sphere: Sphere<f64, 2> = Sphere::default();
-        assert!(sphere.generate([0.9, 0.0]));
-        assert!(sphere.generate([0.7, 0.3]));
-        assert!(!sphere.generate([1.0, 0.3]));
-        assert!(!sphere.generate([0.9, 0.9]));
-    }
-
-    #[test]
-    fn sphere_works_for_negatives() {
-        let sphere: Sphere<f64, 3> = Sphere::default();
-        assert!(sphere.generate([-0.7, -0.3, 0.0]));
-        assert!(!sphere.generate([-1.0, 0.3, 0.0]));
-    }
-
-    #[test]
-    fn sphere_works_across_dimensions() {
-        let sphere: Sphere<f64, 1> = Sphere::default();
-        assert!(sphere.generate([0.9]));
-        let sphere: Sphere<f64, 4> = Sphere::default();
-        assert!(sphere.generate([0.4, 0.3, 0.2, 0.1]));
-    }
-
-    #[test]
-    fn sphere_works_across_types() {
-        let sphere: Sphere<i8, 1> = Sphere::default();
-        assert!(sphere.generate([1]));
-        assert!(!sphere.generate([2]));
-        let sphere: Sphere<i64, 1> = Sphere::default();
-        assert!(sphere.generate([1]));
-    }
-
-    #[test]
-    fn sphere_scales() {
-        let mut sphere: Sphere<f64, 3> = Sphere {
-            radius: 0.9,
-            ..Default::default()
-        };
-        assert!(!sphere.generate([0.91, 0.0, 0.0]));
-        sphere.radius = 3.0;
-        assert!(sphere.generate([0.9, 0.0, 0.0]));
-        assert!(sphere.generate([1.5, 1.5, 1.5]));
-        assert!(!sphere.generate([2.0, 2.0, 2.0]));
-    }
-
-    #[test]
-    fn sphere_moves() {
-        let sphere: Sphere<f64, 2> = Sphere {
-            center: [2.0, 2.0],
-            ..Default::default()
-        };
-        assert!(!sphere.generate([0.0, 0.0]));
-        assert!(sphere.generate([2.0, 2.0]));
-        assert!(sphere.generate([1.0, 2.0]));
-        assert!(sphere.generate([2.0, 3.0]));
-        assert!(!sphere.generate([3.0, 3.0]));
-    }
+    use super::Cuboid;
+    use crate::Generator;
 
     #[test]
     fn generates_cuboid() {
