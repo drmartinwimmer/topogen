@@ -7,7 +7,6 @@ use crate::Generator;
 use ops::Repeat;
 
 pub trait GeometricObject<T, const D: usize>: Sized + Clone {
-    fn center(&self) -> [T; D];
     fn bounding_box(&self) -> Cuboid<T, D>;
     fn within(&self, point: [T; D]) -> bool;
     fn distance(&self, point: [T; D]) -> T;
@@ -16,6 +15,10 @@ pub trait GeometricObject<T, const D: usize>: Sized + Clone {
     fn bitmap(self) -> ops::Bitmap<T, Self, D> {
         ops::Bitmap::new(self)
     }
+}
+
+pub trait Centered<T, const D: usize>: Sized + Clone {
+    fn center(&self) -> [T; D];
 }
 
 pub trait Cartesian<T, const D: usize>: Generator<[T; D]> {

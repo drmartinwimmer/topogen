@@ -1,9 +1,15 @@
-use crate::geometry::GeometricObject;
+use crate::geometry::{Centered, GeometricObject};
 
 #[derive(Debug, Clone)]
 pub struct Cuboid<T, const D: usize> {
     pub sides: [T; D],
     pub center: [T; D],
+}
+
+impl<T: Clone + Copy, const D: usize> Centered<T, D> for Cuboid<T, D> {
+    fn center(&self) -> [T; D] {
+        self.center
+    }
 }
 
 macro_rules! impl_cuboid_default {
@@ -22,10 +28,6 @@ macro_rules! impl_cuboid_default {
 macro_rules! impl_cuboid_geometric_object_signed {
     ($t:ty, $sqrtt:ty) => {
         impl<const D: usize> GeometricObject<$t, D> for Cuboid<$t, D> {
-            fn center(&self) -> [$t; D] {
-                self.center
-            }
-
             fn bounding_box(&self) -> Cuboid<$t, D> {
                 self.clone()
             }
@@ -77,10 +79,6 @@ macro_rules! impl_cuboid_geometric_object_signed {
 macro_rules! impl_cuboid_geometric_object_unsigned {
     ($t:ty, $sqrtt:ty) => {
         impl<const D: usize> GeometricObject<$t, D> for Cuboid<$t, D> {
-            fn center(&self) -> [$t; D] {
-                self.center
-            }
-
             fn bounding_box(&self) -> Cuboid<$t, D> {
                 self.clone()
             }
@@ -157,7 +155,7 @@ impl_cuboid_uint!(u8, u16, u32, u64, u128, usize);
 #[cfg(test)]
 mod tests {
     use super::Cuboid;
-    use crate::geometry::GeometricObject;
+    use crate::geometry::{Centered, GeometricObject};
     use crate::Generator;
 
     #[test]

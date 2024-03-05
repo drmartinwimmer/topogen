@@ -1,5 +1,5 @@
 use crate::geometry::object::Cuboid;
-use crate::geometry::GeometricObject;
+use crate::geometry::{Centered, GeometricObject};
 
 #[derive(Debug, Clone)]
 pub struct Sphere<T, const D: usize> {
@@ -7,13 +7,15 @@ pub struct Sphere<T, const D: usize> {
     pub center: [T; D],
 }
 
+impl<T: Clone + Copy, const D: usize> Centered<T, D> for Sphere<T, D> {
+    fn center(&self) -> [T; D] {
+        self.center
+    }
+}
+
 macro_rules! impl_sphere {
     ($t:ty, $sqrtt:ty) => {
         impl<const D: usize> GeometricObject<$t, D> for Sphere<$t, D> {
-            fn center(&self) -> [$t; D] {
-                self.center
-            }
-
             fn bounding_box(&self) -> Cuboid<$t, D> {
                 Cuboid {
                     center: self.center,
@@ -73,7 +75,7 @@ impl_sphere_float!(f32, f64);
 #[cfg(test)]
 mod tests {
     use super::Sphere;
-    use crate::geometry::GeometricObject;
+    use crate::geometry::{Centered, GeometricObject};
     use crate::Generator;
 
     #[test]
