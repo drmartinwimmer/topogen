@@ -12,6 +12,10 @@ pub trait GeometricObject<T, const D: usize>: Sized + Clone {
     fn within(&self, point: [T; D]) -> bool;
     fn distance(&self, point: [T; D]) -> T;
     fn center_distance(&self, point: [T; D]) -> T;
+
+    fn bitmap(self) -> ops::Bitmap<T, Self, D> {
+        ops::Bitmap::new(self)
+    }
 }
 
 pub trait Cartesian<T, const D: usize>: Generator<[T; D]> {
@@ -28,7 +32,7 @@ impl<G, T, const D: usize> Cartesian<T, D> for G where G: Generator<[T; D]> {}
 
 #[cfg(test)]
 mod tests {
-    use super::Cartesian;
+    use super::{Cartesian, GeometricObject};
     use crate::{geometry::object::Sphere, Generator};
 
     #[test]
@@ -37,7 +41,7 @@ mod tests {
             radius: 10,
             ..Default::default()
         };
-        let repeat = sphere.repeat([0; 2], [100, 50]);
+        let repeat = sphere.bitmap().repeat([0; 2], [100, 50]);
         assert!(repeat.generate([10, 0]));
         assert!(repeat.generate([-9, 0]));
         assert!(!repeat.generate([11, 0]));
@@ -51,7 +55,7 @@ mod tests {
             radius: 10,
             ..Default::default()
         };
-        let repeat = sphere.repeat([50; 2], [100, 100]);
+        let repeat = sphere.bitmap().repeat([50; 2], [100, 100]);
         assert!(repeat.generate([0, 0]));
         assert!(repeat.generate([10, 0]));
         assert!(repeat.generate([0, 10]));

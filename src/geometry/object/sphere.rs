@@ -1,6 +1,5 @@
 use crate::geometry::bitmap::Cuboid;
 use crate::geometry::GeometricObject;
-use crate::Generator;
 
 #[derive(Debug, Clone)]
 pub struct Sphere<T, const D: usize> {
@@ -53,19 +52,6 @@ macro_rules! impl_sphere {
                 }
             }
         }
-
-        impl<const D: usize> Generator<[$t; D]> for Sphere<$t, D> {
-            type Output = bool;
-
-            fn generate(&self, point: [$t; D]) -> bool {
-                let radius: $t = point
-                    .into_iter()
-                    .zip(self.center)
-                    .map(|(p, c)| (p - c) * (p - c))
-                    .sum();
-                radius <= self.radius * self.radius
-            }
-        }
     };
 }
 
@@ -93,6 +79,7 @@ mod tests {
     #[test]
     fn generates_sphere() {
         let sphere: Sphere<f64, 2> = Sphere::default();
+        let sphere = sphere.bitmap();
         assert!(sphere.generate([0.9, 0.0]));
         assert!(sphere.generate([0.7, 0.3]));
         assert!(!sphere.generate([1.0, 0.3]));
@@ -102,25 +89,25 @@ mod tests {
     #[test]
     fn sphere_works_for_negatives() {
         let sphere: Sphere<f64, 3> = Sphere::default();
-        assert!(sphere.generate([-0.7, -0.3, 0.0]));
-        assert!(!sphere.generate([-1.0, 0.3, 0.0]));
+        assert!(sphere.within([-0.7, -0.3, 0.0]));
+        assert!(!sphere.within([-1.0, 0.3, 0.0]));
     }
 
     #[test]
     fn sphere_works_across_dimensions() {
         let sphere: Sphere<f64, 1> = Sphere::default();
-        assert!(sphere.generate([0.9]));
+        assert!(sphere.within([0.9]));
         let sphere: Sphere<f64, 4> = Sphere::default();
-        assert!(sphere.generate([0.4, 0.3, 0.2, 0.1]));
+        assert!(sphere.within([0.4, 0.3, 0.2, 0.1]));
     }
 
     #[test]
     fn sphere_works_across_types() {
         let sphere: Sphere<i8, 1> = Sphere::default();
-        assert!(sphere.generate([1]));
-        assert!(!sphere.generate([2]));
+        assert!(sphere.within([1]));
+        assert!(!sphere.within([2]));
         let sphere: Sphere<i64, 1> = Sphere::default();
-        assert!(sphere.generate([1]));
+        assert!(sphere.within([1]));
     }
 
     #[test]
@@ -129,11 +116,11 @@ mod tests {
             radius: 0.9,
             ..Default::default()
         };
-        assert!(!sphere.generate([0.91, 0.0, 0.0]));
+        assert!(!sphere.within([0.91, 0.0, 0.0]));
         sphere.radius = 3.0;
-        assert!(sphere.generate([0.9, 0.0, 0.0]));
-        assert!(sphere.generate([1.5, 1.5, 1.5]));
-        assert!(!sphere.generate([2.0, 2.0, 2.0]));
+        assert!(sphere.within([0.9, 0.0, 0.0]));
+        assert!(sphere.within([1.5, 1.5, 1.5]));
+        assert!(!sphere.within([2.0, 2.0, 2.0]));
     }
 
     #[test]
@@ -142,11 +129,11 @@ mod tests {
             center: [2.0, 2.0],
             ..Default::default()
         };
-        assert!(!sphere.generate([0.0, 0.0]));
-        assert!(sphere.generate([2.0, 2.0]));
-        assert!(sphere.generate([1.0, 2.0]));
-        assert!(sphere.generate([2.0, 3.0]));
-        assert!(!sphere.generate([3.0, 3.0]));
+        assert!(!sphere.within([0.0, 0.0]));
+        assert!(sphere.within([2.0, 2.0]));
+        assert!(sphere.within([1.0, 2.0]));
+        assert!(sphere.within([2.0, 3.0]));
+        assert!(!sphere.within([3.0, 3.0]));
     }
 
     #[test]

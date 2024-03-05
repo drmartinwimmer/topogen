@@ -26,11 +26,11 @@ pub trait Generator<I>: Sized + Clone {
 #[cfg(test)]
 mod tests {
     use super::Generator;
-    use crate::geometry::object::Sphere;
+    use crate::geometry::{object::Sphere, GeometricObject};
 
     #[test]
     fn map_works() {
-        let sphere = Sphere::default().map(|b: bool| !b);
+        let sphere = Sphere::default().bitmap().map(|b: bool| !b);
         assert!(!sphere.generate([0]));
         assert!(sphere.generate([2]));
     }

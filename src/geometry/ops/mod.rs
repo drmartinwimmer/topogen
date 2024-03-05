@@ -1,5 +1,33 @@
-use super::Cartesian;
+use std::marker::PhantomData;
+
+use super::{Cartesian, GeometricObject};
 use crate::Generator;
+
+#[derive(Debug, Clone)]
+pub struct Bitmap<T, O: GeometricObject<T, D>, const D: usize> {
+    t: PhantomData<T>,
+    pub object: O,
+}
+
+impl<T, O: GeometricObject<T, D>, const D: usize> Bitmap<T, O, D> {
+    pub(crate) fn new(object: O) -> Self {
+        Self {
+            t: PhantomData,
+            object,
+        }
+    }
+}
+
+impl<T, O: GeometricObject<T, D>, const D: usize> Generator<[T; D]> for Bitmap<T, O, D>
+where
+    T: Clone,
+{
+    type Output = bool;
+
+    fn generate(&self, input: [T; D]) -> Self::Output {
+        self.object.within(input)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Repeat<T, G: Cartesian<T, D>, const D: usize> {
