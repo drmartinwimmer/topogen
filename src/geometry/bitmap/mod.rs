@@ -36,17 +36,17 @@ macro_rules! impl_sphere {
 impl_sphere!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64);
 
 #[derive(Debug)]
-pub struct Cube<T, const D: usize> {
-    pub side: T,
+pub struct Cuboid<T, const D: usize> {
+    pub sides: [T; D],
     pub center: [T; D],
 }
 
-macro_rules! impl_cube_default {
+macro_rules! impl_cuboid_default {
     ($t:ty) => {
-        impl<const D: usize> Default for Cube<$t, D> {
+        impl<const D: usize> Default for Cuboid<$t, D> {
             fn default() -> Self {
                 Self {
-                    side: 1 as $t,
+                    sides: [1 as $t; D],
                     center: [<$t>::default(); D],
                 }
             }
@@ -54,57 +54,57 @@ macro_rules! impl_cube_default {
     };
 }
 
-macro_rules! impl_cube_generator_signed {
+macro_rules! impl_cuboid_generator_signed {
     ($t:ty) => {
-        impl<const D: usize> Generator<[$t; D]> for Cube<$t, D> {
+        impl<const D: usize> Generator<[$t; D]> for Cuboid<$t, D> {
             type Output = bool;
 
             fn generate(&self, point: [$t; D]) -> bool {
                 point
                     .into_iter()
-                    .zip(self.center)
-                    .all(|(p, c)| 2 as $t * (p - c).abs() <= self.side)
+                    .zip(self.sides.iter().zip(self.center.iter()))
+                    .all(|(p, (s, c))| 2 as $t * (p - c).abs() <= *s)
             }
         }
     };
 }
 
-macro_rules! impl_cube_generator_unsigned {
+macro_rules! impl_cuboid_generator_unsigned {
     ($t:ty) => {
-        impl<const D: usize> Generator<[$t; D]> for Cube<$t, D> {
+        impl<const D: usize> Generator<[$t; D]> for Cuboid<$t, D> {
             type Output = bool;
 
             fn generate(&self, point: [$t; D]) -> bool {
                 point
                     .into_iter()
-                    .zip(self.center)
-                    .all(|(p, c)| 2 as $t * p - c <= self.side)
+                    .zip(self.sides.iter().zip(self.center.iter()))
+                    .all(|(p, (s, c))| 2 as $t * p - c <= *s)
             }
         }
     };
 }
 
-macro_rules! impl_cube_signed {
+macro_rules! impl_cuboid_signed {
     ($($t:ty),+) => {$(
-        impl_cube_default!($t);
-        impl_cube_generator_signed!($t);
+        impl_cuboid_default!($t);
+        impl_cuboid_generator_signed!($t);
     )+};
 }
 
-macro_rules! impl_cube_unsigned {
+macro_rules! impl_cuboid_unsigned {
     ($($t:ty),+) => {$(
-        impl_cube_default!($t);
-        impl_cube_generator_unsigned!($t);
+        impl_cuboid_default!($t);
+        impl_cuboid_generator_unsigned!($t);
     )+};
 }
 
-impl_cube_signed!(i8, i16, i32, i64, i128, isize, f32, f64);
-impl_cube_unsigned!(u8, u16, u32, u64, u128, usize);
+impl_cuboid_signed!(i8, i16, i32, i64, i128, isize, f32, f64);
+impl_cuboid_unsigned!(u8, u16, u32, u64, u128, usize);
 
 #[cfg(test)]
 mod tests {
     use crate::{
-        geometry::bitmap::{Cube, Sphere},
+        geometry::bitmap::{Cuboid, Sphere},
         Generator,
     };
 
@@ -168,48 +168,62 @@ mod tests {
     }
 
     #[test]
-    fn generates_cube() {
-        let cube: Cube<f64, 2> = Cube::default();
-        assert!(cube.generate([0.5, 0.5]));
-        assert!(!cube.generate([0.5, 0.51]));
+    fn generates_cuboid() {
+        let cuboid: Cuboid<f64, 2> = Cuboid::default();
+        assert!(cuboid.generate([0.5, 0.5]));
+        assert!(!cuboid.generate([0.5, 0.51]));
     }
 
     #[test]
-    fn cube_works_for_negatives() {
-        let cube: Cube<f64, 1> = Cube::default();
-        assert!(cube.generate([-0.5]));
-        assert!(!cube.generate([-0.51]));
+    fn cuboid_works_for_negatives() {
+        let cuboid: Cuboid<f64, 1> = Cuboid::default();
+        assert!(cuboid.generate([-0.5]));
+        assert!(!cuboid.generate([-0.51]));
     }
 
     #[test]
-    fn cube_works_across_types() {
-        let cube: Cube<i32, 1> = Cube {
-            side: 10_i32,
+    fn cuboid_works_across_types() {
+        let cuboid: Cuboid<i32, 1> = Cuboid {
+            sides: [10_i32],
             ..Default::default()
         };
-        assert!(cube.generate([5]));
-        assert!(!cube.generate([6]));
+        assert!(cuboid.generate([5]));
+        assert!(!cuboid.generate([6]));
     }
 
     #[test]
-    fn unit_cube_works_across_dimensions() {
-        let cube: Cube<i32, 8> = Cube {
-            side: 2_i32,
+    fn unit_cuboid_works_across_dimensions() {
+        let cuboid: Cuboid<i32, 8> = Cuboid {
+            sides: [2_i32; 8],
             ..Default::default()
         };
-        assert!(cube.generate([1; 8]));
+        assert!(cuboid.generate([1; 8]));
     }
 
     #[test]
-    fn cube_moves() {
-        let cube: Cube<i32, 2> = Cube {
-            side: 2,
+    fn cuboid_moves() {
+        let cuboid: Cuboid<i32, 2> = Cuboid {
+            sides: [2, 2],
             center: [2, 2],
         };
-        assert!(!cube.generate([0, 0]));
-        assert!(cube.generate([1, 1]));
-        assert!(cube.generate([2, 2]));
-        assert!(cube.generate([3, 3]));
-        assert!(cube.generate([1, 3]));
+        assert!(!cuboid.generate([0, 0]));
+        assert!(cuboid.generate([1, 1]));
+        assert!(cuboid.generate([2, 2]));
+        assert!(cuboid.generate([3, 3]));
+        assert!(cuboid.generate([1, 3]));
+    }
+
+    #[test]
+    fn cuboid_works_with_distinct_sides() {
+        let cuboid: Cuboid<i32, 3> = Cuboid {
+            sides: [2, 4, 6],
+            ..Default::default()
+        };
+        assert!(cuboid.generate([1, 2, 3]));
+        assert!(cuboid.generate([-1, -2, -3]));
+        assert!(cuboid.generate([-1, 2, -3]));
+        assert!(!cuboid.generate([1, 2, 4]));
+        assert!(!cuboid.generate([1, 3, 3]));
+        assert!(!cuboid.generate([-2, -2, -3]));
     }
 }
