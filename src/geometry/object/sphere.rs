@@ -1,4 +1,4 @@
-use crate::geometry::bitmap::Cuboid;
+use crate::geometry::object::Cuboid;
 use crate::geometry::GeometricObject;
 
 #[derive(Debug, Clone)]

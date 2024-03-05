@@ -2,7 +2,7 @@ pub mod bitmap;
 pub mod object;
 pub mod ops;
 
-use self::bitmap::Cuboid;
+use self::object::Cuboid;
 use crate::Generator;
 use ops::Repeat;
 
