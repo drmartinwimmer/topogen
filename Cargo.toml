@@ -13,3 +13,7 @@ tempdir = "0.3.7"
 
 [features]
 image = ["dep:image"]
+
+[[example]]
+name = "generate_circle_image"
+required-features = ["image"]
