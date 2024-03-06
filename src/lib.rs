@@ -1,4 +1,6 @@
 pub mod geometry;
+#[cfg(feature = "image")]
+pub mod image;
 pub mod ops;
 
 pub trait Generator<I>: Sized + Clone {
