@@ -45,11 +45,11 @@ mod tests {
             ..Default::default()
         };
         let repeat = sphere.bitmap().repeat([0; 2], [100, 50]);
-        assert!(repeat.generate([10, 0]));
+        assert!(repeat.generate([9, 0]));
         assert!(repeat.generate([-9, 0]));
-        assert!(!repeat.generate([11, 0]));
-        assert!(repeat.generate([90, 0]));
-        assert!(repeat.generate([210, 300]));
+        assert!(!repeat.generate([10, 0]));
+        assert!(repeat.generate([91, 0]));
+        assert!(repeat.generate([209, 300]));
     }
 
     #[test]
@@ -60,8 +60,8 @@ mod tests {
         };
         let repeat = sphere.bitmap().repeat([50; 2], [100, 100]);
         assert!(repeat.generate([0, 0]));
-        assert!(repeat.generate([10, 0]));
-        assert!(repeat.generate([0, 10]));
+        assert!(repeat.generate([9, 0]));
+        assert!(repeat.generate([0, 9]));
         assert!(!repeat.generate([-1, 0]));
     }
 }

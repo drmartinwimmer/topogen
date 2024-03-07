@@ -45,7 +45,7 @@ macro_rules! impl_cuboid_geometric_object_signed {
                 point
                     .into_iter()
                     .zip(self.sides.iter().zip(self.center.iter()))
-                    .all(|(p, (s, c))| 2 as $t * (p - c).abs() <= *s)
+                    .all(|(p, (s, c))| 2 as $t * (p - c).abs() < *s)
             }
 
             fn distance(&self, point: [$t; D]) -> $t {
@@ -83,7 +83,7 @@ macro_rules! impl_cuboid_geometric_object_unsigned {
                 point
                     .into_iter()
                     .zip(self.sides.iter().zip(self.center.iter()))
-                    .all(|(p, (s, c))| 2 as $t * (p - c) <= *s)
+                    .all(|(p, (s, c))| 2 as $t * (p - c) < *s)
             }
 
             fn distance(&self, point: [$t; D]) -> $t {
@@ -152,15 +152,15 @@ mod tests {
     fn generates_cuboid() {
         let cuboid: Cuboid<f64, 2> = Cuboid::default();
         let cuboid = cuboid.bitmap();
-        assert!(cuboid.generate([0.5, 0.5]));
-        assert!(!cuboid.generate([0.5, 0.51]));
+        assert!(cuboid.generate([0.49, 0.49]));
+        assert!(!cuboid.generate([0.49, 0.5]));
     }
 
     #[test]
     fn cuboid_works_for_negatives() {
         let cuboid: Cuboid<f64, 1> = Cuboid::default();
-        assert!(cuboid.within([-0.5]));
-        assert!(!cuboid.within([-0.51]));
+        assert!(cuboid.within([-0.49]));
+        assert!(!cuboid.within([-0.5]));
     }
 
     #[test]
@@ -169,14 +169,14 @@ mod tests {
             sides: [10_i32],
             ..Default::default()
         };
-        assert!(cuboid.within([5]));
-        assert!(!cuboid.within([6]));
+        assert!(cuboid.within([4]));
+        assert!(!cuboid.within([5]));
     }
 
     #[test]
     fn unit_cuboid_works_across_dimensions() {
         let cuboid: Cuboid<i32, 8> = Cuboid {
-            sides: [2_i32; 8],
+            sides: [3_i32; 8],
             ..Default::default()
         };
         assert!(cuboid.within([1; 8]));
@@ -185,7 +185,7 @@ mod tests {
     #[test]
     fn cuboid_moves() {
         let cuboid: Cuboid<i32, 2> = Cuboid {
-            sides: [2, 2],
+            sides: [3, 3],
             center: [2, 2],
         };
         assert!(!cuboid.within([0, 0]));
@@ -198,7 +198,7 @@ mod tests {
     #[test]
     fn cuboid_works_with_distinct_sides() {
         let cuboid: Cuboid<i32, 3> = Cuboid {
-            sides: [2, 4, 6],
+            sides: [3, 5, 7],
             ..Default::default()
         };
         assert!(cuboid.within([1, 2, 3]));

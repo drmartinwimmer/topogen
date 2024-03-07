@@ -24,7 +24,7 @@ macro_rules! impl_sphere {
                     .zip(self.center)
                     .map(|(p, c)| (p - c) * (p - c))
                     .sum();
-                radius <= self.radius * self.radius
+                radius < self.radius * self.radius
             }
 
             fn distance(&self, point: [$t; D]) -> $t {
@@ -106,11 +106,14 @@ mod tests {
 
     #[test]
     fn sphere_works_across_types() {
-        let sphere: Sphere<i8, 1> = Sphere::default();
+        let sphere: Sphere<i8, 1> = Sphere {
+            radius: 2,
+            ..Default::default()
+        };
         assert!(sphere.within([1]));
         assert!(!sphere.within([2]));
         let sphere: Sphere<i64, 1> = Sphere::default();
-        assert!(sphere.within([1]));
+        assert!(sphere.within([0]));
     }
 
     #[test]
@@ -134,8 +137,8 @@ mod tests {
         };
         assert!(!sphere.within([0.0, 0.0]));
         assert!(sphere.within([2.0, 2.0]));
-        assert!(sphere.within([1.0, 2.0]));
-        assert!(sphere.within([2.0, 3.0]));
+        assert!(sphere.within([1.01, 2.0]));
+        assert!(sphere.within([2.0, 2.99]));
         assert!(!sphere.within([3.0, 3.0]));
     }
 
