@@ -97,6 +97,9 @@ pub trait BoundT<const D: usize>: Sized {
     fn for_intersection(&self, other: &Self) -> Option<Self>;
     fn remove_lower_bound(self, dimension: usize) -> PartialBound<Self::T, D>;
     fn remove_upper_bound(self, dimension: usize) -> PartialBound<Self::T, D>;
+
+    #[allow(clippy::type_complexity)]
+    fn bounds(&self) -> Result<([Self::T; D], [Self::T; D]), Error>;
 }
 
 #[derive(Clone, Debug)]
@@ -109,6 +112,7 @@ macro_rules! impl_bound_boundt {
     ($t:ty) => {
         impl<const D: usize> BoundT<D> for Bound<$t, D> {
             type T = $t;
+
             fn within(&self, point: [Self::T; D]) -> bool {
                 point
                     .into_iter()
@@ -150,6 +154,10 @@ macro_rules! impl_bound_boundt {
             fn remove_upper_bound(self, dimension: usize) -> PartialBound<Self::T, D> {
                 let partial_bound: PartialBound<Self::T, D> = self.into();
                 partial_bound.remove_upper_bound(dimension)
+            }
+
+            fn bounds(&self) -> Result<([Self::T; D], [Self::T; D]), Error> {
+                Ok((self.min.clone(), self.max.clone()))
             }
         }
     };
@@ -326,13 +334,12 @@ where
 
 impl<T, const D: usize> TryFrom<&PartialBound<T, D>> for Bound<T, D>
 where
-    [T; D]: Default,
-    T: Clone + Copy,
+    T: Default + Clone + Copy,
 {
     type Error = Error;
 
     fn try_from(value: &PartialBound<T, D>) -> Result<Self, Error> {
-        let (mut new_min, mut new_max) = (<[T; D]>::default(), <[T; D]>::default());
+        let (mut new_min, mut new_max) = ([<T>::default(); D], [<T>::default(); D]);
         for i in 0..D {
             match (&value.min[i], &value.max[i]) {
                 (Some(min), Some(max)) => {
@@ -353,6 +360,7 @@ macro_rules! impl_partial_bound {
     ($t:ty) => {
         impl<const D: usize> BoundT<D> for PartialBound<$t, D> {
             type T = $t;
+
             fn within(&self, point: [Self::T; D]) -> bool {
                 point
                     .into_iter()
@@ -416,6 +424,11 @@ macro_rules! impl_partial_bound {
                 self.max[dimension] = None;
                 self
             }
+
+            fn bounds(&self) -> Result<([Self::T; D], [Self::T; D]), Error> {
+                let bound = Bound::<$t, D>::try_from(self)?;
+                bound.bounds()
+            }
         }
 
         impl<const D: usize> PartialBound<$t, D> {
@@ -445,7 +458,7 @@ pub enum Error {
 
 #[cfg(test)]
 mod tests {
-    use super::{Bound, BoundT, BoundingBox, PartialBound};
+    use super::{Bound, BoundT, BoundingBox, Error, PartialBound};
 
     #[test]
     fn new_bound_works() {
@@ -462,6 +475,22 @@ mod tests {
         let partial_bound: PartialBound<i32, 2> = Bound::<i32, 2>::new([15, 15], [10, 10]).into();
         assert!(partial_bound.within([15, 15]));
         assert!(!partial_bound.within([25, 15]));
+    }
+
+    #[test]
+    fn try_from_partial_bound_works() {
+        let partial_bound: PartialBound<i32, 2> = Bound::<i32, 2>::new([15, 15], [10, 10]).into();
+        let _: Bound<i32, 2> = partial_bound.try_into().unwrap();
+    }
+
+    #[test]
+    fn try_from_partial_bound_fails_on_unbounded() {
+        let partial_bound: PartialBound<i32, 2> = Bound::<i32, 2>::new([15, 15], [10, 10]).into();
+        let partial_bound = partial_bound.remove_lower_bound(0);
+        assert!(matches!(
+            Bound::<i32, 2>::try_from(&partial_bound),
+            Err(Error::Unbounded)
+        ));
     }
 
     #[test]

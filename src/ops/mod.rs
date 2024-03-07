@@ -1,3 +1,5 @@
+use crate::geometry::{object::BoundingBox, WithBoundingBox};
+
 use super::Generator;
 
 #[derive(Debug, Clone)]
@@ -24,6 +26,16 @@ where
     }
 }
 
+impl<G, F, T, const D: usize> WithBoundingBox<T, D> for MapOutput<G, F>
+where
+    G: WithBoundingBox<T, D>,
+    T: Clone + Copy,
+{
+    fn bounding_box(&self) -> BoundingBox<T, D> {
+        self.generator.bounding_box()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct MapInput<G, F> {
     generator: G,
@@ -45,5 +57,15 @@ where
 
     fn generate(&self, input: I) -> Self::Output {
         self.generator.generate((self.mapper)(input))
+    }
+}
+
+impl<G, F, T, const D: usize> WithBoundingBox<T, D> for MapInput<G, F>
+where
+    G: WithBoundingBox<T, D>,
+    T: Clone + Copy,
+{
+    fn bounding_box(&self) -> BoundingBox<T, D> {
+        self.generator.bounding_box()
     }
 }

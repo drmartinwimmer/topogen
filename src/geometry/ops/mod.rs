@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use super::{Cartesian, GeometricObject};
+use super::{object::BoundingBox, Cartesian, GeometricObject, WithBoundingBox};
 use crate::Generator;
 
 #[derive(Debug, Clone)]
@@ -29,11 +29,30 @@ where
     }
 }
 
+impl<T, O: GeometricObject<T, D>, const D: usize> WithBoundingBox<T, D> for Bitmap<T, O, D>
+where
+    O: WithBoundingBox<T, D>,
+    T: Clone + Copy,
+{
+    fn bounding_box(&self) -> BoundingBox<T, D> {
+        self.object.bounding_box()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Repeat<T, G: Cartesian<T, D>, const D: usize> {
     pub generator: G,
     pub center: [T; D],
     pub repeat: [T; D],
+}
+
+impl<T, G: Cartesian<T, D>, const D: usize> WithBoundingBox<T, D> for Repeat<T, G, D>
+where
+    T: Clone + Copy,
+{
+    fn bounding_box(&self) -> BoundingBox<T, D> {
+        BoundingBox::Unbounded
+    }
 }
 
 macro_rules! impl_repeat {

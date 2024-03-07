@@ -1,6 +1,7 @@
 #[cfg(feature = "palette")]
 pub mod palette;
 
+use crate::geometry::WithBoundingBox;
 use crate::Generator;
 
 pub trait Image<T>: Generator<[T; 2]> {
@@ -50,7 +51,7 @@ macro_rules! impl_image {
     ($t:ty) => {
         impl<C, G> Image<$t> for G
         where
-            G: Generator<[$t; 2], Output = C>,
+            G: Generator<[$t; 2], Output = C> + WithBoundingBox<$t, 2>,
             C: IntoPixel,
             C::Pixel: image::PixelWithColorType,
             [<C::Pixel as image::Pixel>::Subpixel]: image::EncodableLayout,
@@ -121,4 +122,12 @@ mod tests {
         assert_eq!(saved_image.width(), 3);
         assert_eq!(saved_image.height(), 3);
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Image Error {0:?}")]
+    ImageError(#[from] image::ImageError),
+    #[error("Image is unbounded")]
+    Unbounded,
 }
