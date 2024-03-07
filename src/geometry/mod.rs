@@ -1,18 +1,18 @@
 mod center;
 pub mod object;
-pub mod ops;
 
 use self::object::BoundingBox;
+use crate::ops::Bitmap;
+use crate::ops::Repeat;
 use crate::Generator;
 pub use center::{WithCenter, WithCenterDistance};
-use ops::Repeat;
 
 pub trait GeometricObject<T, const D: usize>: Sized + Clone {
     fn within(&self, point: [T; D]) -> bool;
     fn distance(&self, point: [T; D]) -> T;
 
-    fn bitmap(self) -> ops::Bitmap<T, Self, D> {
-        ops::Bitmap::new(self)
+    fn bitmap(self) -> Bitmap<T, Self, D> {
+        Bitmap::new(self)
     }
 }
 
@@ -30,8 +30,6 @@ impl<G, T, const D: usize> Cartesian<T, D> for G where G: Generator<[T; D]> {}
 pub trait WithBoundingBox<T: Clone + Copy, const D: usize>: Sized {
     fn bounding_box(&self) -> BoundingBox<T, D>;
 }
-
-pub trait Bitmap<T, const D: usize>: Generator<[T; D], Output = bool> {}
 
 #[cfg(test)]
 mod tests {
