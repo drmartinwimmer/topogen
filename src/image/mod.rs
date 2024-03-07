@@ -5,13 +5,7 @@ use crate::geometry::WithBoundingBox;
 use crate::Generator;
 
 pub trait Image<T>: Generator<[T; 2]> {
-    fn save_image(
-        self,
-        path: &str,
-        start: [T; 2],
-        size: [T; 2],
-        step: [T; 2],
-    ) -> Result<(), image::ImageError>;
+    fn save_image(self, path: &str, step: [T; 2]) -> Result<(), Error>;
 }
 
 pub trait IntoPixel {
@@ -56,13 +50,8 @@ macro_rules! impl_image {
             C::Pixel: image::PixelWithColorType,
             [<C::Pixel as image::Pixel>::Subpixel]: image::EncodableLayout,
         {
-            fn save_image(
-                self,
-                path: &str,
-                start: [$t; 2],
-                end: [$t; 2],
-                step: [$t; 2],
-            ) -> Result<(), image::ImageError> {
+            fn save_image(self, path: &str, step: [$t; 2]) -> Result<(), Error> {
+                let (start, end) = self.bounding_box().bounds()?;
                 let size = [
                     ((end[0] - start[0]) / step[0]) as u32,
                     ((end[1] - start[1]) / step[1]) as u32,
@@ -78,7 +67,8 @@ macro_rules! impl_image {
                         image.put_pixel(ix, iy, self.generate([gx, gy]).into_pixel());
                     }
                 }
-                image.save(path)
+                image.save(path)?;
+                Ok(())
             }
         }
     };
@@ -91,6 +81,14 @@ macro_rules! impl_image_all {
 }
 
 impl_image_all!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64);
+
+#[derive(thiserror::Error, Debug)]
+pub enum Error {
+    #[error("Image Error {0:?}")]
+    ImageError(#[from] image::ImageError),
+    #[error("Image is unbounded")]
+    BoundingBoxError(#[from] crate::geometry::object::bounding_box::Error),
+}
 
 #[cfg(test)]
 mod tests {
@@ -114,20 +112,10 @@ mod tests {
         });
         let output_dir = TempDir::new("generative_map_saves_image_test").unwrap();
         let path = output_dir.path().join("test.png");
-        image
-            .save_image(path.to_str().unwrap(), [0, 0], [3, 3], [1, 1])
-            .unwrap();
+        image.save_image(path.to_str().unwrap(), [1, 1]).unwrap();
 
         let saved_image = image::open(path).unwrap();
-        assert_eq!(saved_image.width(), 3);
-        assert_eq!(saved_image.height(), 3);
+        assert_eq!(saved_image.width(), 2);
+        assert_eq!(saved_image.height(), 2);
     }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum Error {
-    #[error("Image Error {0:?}")]
-    ImageError(#[from] image::ImageError),
-    #[error("Image is unbounded")]
-    Unbounded,
 }

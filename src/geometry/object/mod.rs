@@ -1,4 +1,4 @@
-mod bounding_box;
+pub mod bounding_box;
 mod cuboid;
 mod sphere;
 

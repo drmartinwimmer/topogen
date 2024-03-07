@@ -87,6 +87,15 @@ where
             }
         }
     }
+
+    pub fn bounds(&self) -> Result<([T; D], [T; D]), Error> {
+        match self {
+            BoundingBox::Unbounded => Err(Error::Unbounded),
+            BoundingBox::Empty => Err(Error::Empty),
+            BoundingBox::Bounded(bound) => Ok(bound.bounds()?),
+            BoundingBox::PartiallyBounded(bound) => Ok(bound.bounds()?),
+        }
+    }
 }
 
 pub trait BoundT<const D: usize>: Sized {
@@ -452,8 +461,10 @@ impl_partial_bound_all!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128,
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("An unbounded bound was used in an operation that requires a bounded bound")]
+    #[error("An unbounded bound was used in an operation that requires a bound")]
     Unbounded,
+    #[error("An empty bound was used in an operation that requires a bound")]
+    Empty,
 }
 
 #[cfg(test)]
