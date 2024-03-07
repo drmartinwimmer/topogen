@@ -1,4 +1,7 @@
-use crate::geometry::{GeometricObject, WithCenter};
+use crate::geometry::{
+    object::{Bound, BoundingBox},
+    GeometricObject, WithBoundingBox, WithCenter,
+};
 
 #[derive(Debug, Clone)]
 pub struct Cuboid<T, const D: usize> {
@@ -10,6 +13,16 @@ impl<T: Clone + Copy, const D: usize> WithCenter<T, D> for Cuboid<T, D> {
     fn center(&self) -> &[T; D] {
         &self.center
     }
+}
+
+macro_rules! impl_cuboid_bounding_box {
+    ($t:ty) => {
+        impl<const D: usize> WithBoundingBox<$t, D> for Cuboid<$t, D> {
+            fn bounding_box(&self) -> BoundingBox<$t, D> {
+                BoundingBox::Bounded(Bound::<$t, D>::new_centered(self.center, self.sides))
+            }
+        }
+    };
 }
 
 macro_rules! impl_cuboid_default {
@@ -28,10 +41,6 @@ macro_rules! impl_cuboid_default {
 macro_rules! impl_cuboid_geometric_object_signed {
     ($t:ty, $sqrtt:ty) => {
         impl<const D: usize> GeometricObject<$t, D> for Cuboid<$t, D> {
-            fn bounding_box(&self) -> Cuboid<$t, D> {
-                self.clone()
-            }
-
             fn within(&self, point: [$t; D]) -> bool {
                 point
                     .into_iter()
@@ -70,10 +79,6 @@ macro_rules! impl_cuboid_geometric_object_signed {
 macro_rules! impl_cuboid_geometric_object_unsigned {
     ($t:ty, $sqrtt:ty) => {
         impl<const D: usize> GeometricObject<$t, D> for Cuboid<$t, D> {
-            fn bounding_box(&self) -> Cuboid<$t, D> {
-                self.clone()
-            }
-
             fn within(&self, point: [$t; D]) -> bool {
                 point
                     .into_iter()
@@ -111,6 +116,7 @@ macro_rules! impl_cuboid_geometric_object_unsigned {
 
 macro_rules! impl_cuboid_float {
     ($($t:ty),+) => {$(
+        impl_cuboid_bounding_box!($t);
         impl_cuboid_default!($t);
         impl_cuboid_geometric_object_signed!($t, $t);
     )+};
@@ -118,6 +124,7 @@ macro_rules! impl_cuboid_float {
 
 macro_rules! impl_cuboid_int {
     ($($t:ty),+) => {$(
+        impl_cuboid_bounding_box!($t);
         impl_cuboid_default!($t);
         impl_cuboid_geometric_object_signed!($t, f64);
     )+};
@@ -125,6 +132,7 @@ macro_rules! impl_cuboid_int {
 
 macro_rules! impl_cuboid_uint {
     ($($t:ty),+) => {$(
+        impl_cuboid_bounding_box!($t);
         impl_cuboid_default!($t);
         impl_cuboid_geometric_object_unsigned!($t, f64);
     )+};

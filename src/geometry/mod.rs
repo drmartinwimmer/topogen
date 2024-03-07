@@ -1,14 +1,13 @@
-mod centered;
+mod center;
 pub mod object;
 pub mod ops;
 
-use self::object::Cuboid;
+use self::object::BoundingBox;
 use crate::Generator;
-pub use centered::{WithCenter, WithCenterDistance};
+pub use center::{WithCenter, WithCenterDistance};
 use ops::Repeat;
 
 pub trait GeometricObject<T, const D: usize>: Sized + Clone {
-    fn bounding_box(&self) -> Cuboid<T, D>;
     fn within(&self, point: [T; D]) -> bool;
     fn distance(&self, point: [T; D]) -> T;
 
@@ -26,8 +25,11 @@ pub trait Cartesian<T, const D: usize>: Generator<[T; D]> {
         }
     }
 }
-
 impl<G, T, const D: usize> Cartesian<T, D> for G where G: Generator<[T; D]> {}
+
+pub trait WithBoundingBox<T: Clone + Copy, const D: usize>: Sized {
+    fn bounding_box(&self) -> BoundingBox<T, D>;
+}
 
 pub trait Bitmap<T, const D: usize>: Generator<[T; D], Output = bool> {}
 

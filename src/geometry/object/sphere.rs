@@ -1,5 +1,7 @@
-use crate::geometry::object::Cuboid;
-use crate::geometry::{GeometricObject, WithCenter, WithCenterDistance};
+use crate::geometry::{
+    object::{Bound, BoundingBox},
+    GeometricObject, WithBoundingBox, WithCenter, WithCenterDistance,
+};
 
 #[derive(Debug, Clone)]
 pub struct Sphere<T, const D: usize> {
@@ -16,13 +18,6 @@ impl<T: Clone + Copy, const D: usize> WithCenter<T, D> for Sphere<T, D> {
 macro_rules! impl_sphere {
     ($t:ty, $sqrtt:ty) => {
         impl<const D: usize> GeometricObject<$t, D> for Sphere<$t, D> {
-            fn bounding_box(&self) -> Cuboid<$t, D> {
-                Cuboid {
-                    center: self.center,
-                    sides: [(2 as $t) * self.radius; D],
-                }
-            }
-
             fn within(&self, point: [$t; D]) -> bool {
                 let radius: $t = point
                     .into_iter()
@@ -48,14 +43,29 @@ macro_rules! impl_sphere {
     };
 }
 
+macro_rules! impl_sphere_bounding_box {
+    ($t:ty) => {
+        impl<const D: usize> WithBoundingBox<$t, D> for Sphere<$t, D> {
+            fn bounding_box(&self) -> BoundingBox<$t, D> {
+                BoundingBox::Bounded(Bound::<$t, D>::new_centered(
+                    self.center,
+                    [self.radius * (2 as $t); D],
+                ))
+            }
+        }
+    };
+}
+
 macro_rules! impl_sphere_int {
     ($($t:ty),+) => {$(
+        impl_sphere_bounding_box!($t);
         impl_sphere!($t, f64);
     )+};
 }
 
 macro_rules! impl_sphere_float {
     ($($t:ty),+) => {$(
+        impl_sphere_bounding_box!($t);
         impl_sphere!($t, $t);
     )+};
 }
