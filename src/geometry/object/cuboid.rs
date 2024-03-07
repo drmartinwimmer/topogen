@@ -1,4 +1,4 @@
-use crate::geometry::{Centered, GeometricObject};
+use crate::geometry::{GeometricObject, WithCenter};
 
 #[derive(Debug, Clone)]
 pub struct Cuboid<T, const D: usize> {
@@ -6,9 +6,9 @@ pub struct Cuboid<T, const D: usize> {
     pub center: [T; D],
 }
 
-impl<T: Clone + Copy, const D: usize> Centered<T, D> for Cuboid<T, D> {
-    fn center(&self) -> [T; D] {
-        self.center
+impl<T: Clone + Copy, const D: usize> WithCenter<T, D> for Cuboid<T, D> {
+    fn center(&self) -> &[T; D] {
+        &self.center
     }
 }
 
@@ -37,15 +37,6 @@ macro_rules! impl_cuboid_geometric_object_signed {
                     .into_iter()
                     .zip(self.sides.iter().zip(self.center.iter()))
                     .all(|(p, (s, c))| 2 as $t * (p - c).abs() <= *s)
-            }
-
-            fn center_distance(&self, point: [$t; D]) -> $t {
-                let distance: $t = point
-                    .into_iter()
-                    .zip(self.center)
-                    .map(|(p, c)| (p - c) * (p - c))
-                    .sum();
-                (distance as $sqrtt).sqrt() as $t
             }
 
             fn distance(&self, point: [$t; D]) -> $t {
@@ -88,15 +79,6 @@ macro_rules! impl_cuboid_geometric_object_unsigned {
                     .into_iter()
                     .zip(self.sides.iter().zip(self.center.iter()))
                     .all(|(p, (s, c))| 2 as $t * (p - c) <= *s)
-            }
-
-            fn center_distance(&self, point: [$t; D]) -> $t {
-                let distance: $t = point
-                    .into_iter()
-                    .zip(self.center)
-                    .map(|(p, c)| (p - c) * (p - c))
-                    .sum();
-                (distance as $sqrtt).sqrt() as $t
             }
 
             fn distance(&self, point: [$t; D]) -> $t {
@@ -155,7 +137,7 @@ impl_cuboid_uint!(u8, u16, u32, u64, u128, usize);
 #[cfg(test)]
 mod tests {
     use super::Cuboid;
-    use crate::geometry::{Centered, GeometricObject};
+    use crate::geometry::{GeometricObject, WithCenter, WithCenterDistance};
     use crate::Generator;
 
     #[test]
@@ -226,7 +208,7 @@ mod tests {
             center,
             ..Default::default()
         };
-        assert_eq!(center, cuboid.center());
+        assert_eq!(&center, cuboid.center());
     }
 
     #[test]

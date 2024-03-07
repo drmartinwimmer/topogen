@@ -1,24 +1,20 @@
-pub mod bitmap;
+mod centered;
 pub mod object;
 pub mod ops;
 
 use self::object::Cuboid;
 use crate::Generator;
+pub use centered::{WithCenter, WithCenterDistance};
 use ops::Repeat;
 
 pub trait GeometricObject<T, const D: usize>: Sized + Clone {
     fn bounding_box(&self) -> Cuboid<T, D>;
     fn within(&self, point: [T; D]) -> bool;
     fn distance(&self, point: [T; D]) -> T;
-    fn center_distance(&self, point: [T; D]) -> T;
 
     fn bitmap(self) -> ops::Bitmap<T, Self, D> {
         ops::Bitmap::new(self)
     }
-}
-
-pub trait Centered<T, const D: usize>: Sized + Clone {
-    fn center(&self) -> [T; D];
 }
 
 pub trait Cartesian<T, const D: usize>: Generator<[T; D]> {
@@ -32,6 +28,8 @@ pub trait Cartesian<T, const D: usize>: Generator<[T; D]> {
 }
 
 impl<G, T, const D: usize> Cartesian<T, D> for G where G: Generator<[T; D]> {}
+
+pub trait Bitmap<T, const D: usize>: Generator<[T; D], Output = bool> {}
 
 #[cfg(test)]
 mod tests {

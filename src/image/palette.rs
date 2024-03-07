@@ -61,7 +61,7 @@ mod tests {
             false => Hsl::new(RgbHue::new(0.3), 0.5, 0.0),
         });
         let output_dir = TempDir::new("generative_map_saves_image_with_palette_test").unwrap();
-        let path = output_dir.path().join("test.bmp");
+        let path = output_dir.path().join("test.png");
         image
             .save_image(path.to_str().unwrap(), [0, 0], [3, 3], [1, 1])
             .unwrap();

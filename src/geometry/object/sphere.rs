@@ -1,5 +1,5 @@
 use crate::geometry::object::Cuboid;
-use crate::geometry::{Centered, GeometricObject};
+use crate::geometry::{GeometricObject, WithCenter, WithCenterDistance};
 
 #[derive(Debug, Clone)]
 pub struct Sphere<T, const D: usize> {
@@ -7,9 +7,9 @@ pub struct Sphere<T, const D: usize> {
     pub center: [T; D],
 }
 
-impl<T: Clone + Copy, const D: usize> Centered<T, D> for Sphere<T, D> {
-    fn center(&self) -> [T; D] {
-        self.center
+impl<T: Clone + Copy, const D: usize> WithCenter<T, D> for Sphere<T, D> {
+    fn center(&self) -> &[T; D] {
+        &self.center
     }
 }
 
@@ -30,15 +30,6 @@ macro_rules! impl_sphere {
                     .map(|(p, c)| (p - c) * (p - c))
                     .sum();
                 radius <= self.radius * self.radius
-            }
-
-            fn center_distance(&self, point: [$t; D]) -> $t {
-                let distance: $t = point
-                    .into_iter()
-                    .zip(self.center)
-                    .map(|(p, c)| (p - c) * (p - c))
-                    .sum();
-                (distance as $sqrtt).sqrt() as $t
             }
 
             fn distance(&self, point: [$t; D]) -> $t {
@@ -75,7 +66,7 @@ impl_sphere_float!(f32, f64);
 #[cfg(test)]
 mod tests {
     use super::Sphere;
-    use crate::geometry::{Centered, GeometricObject};
+    use crate::geometry::{GeometricObject, WithCenter, WithCenterDistance};
     use crate::Generator;
 
     #[test]
@@ -145,7 +136,7 @@ mod tests {
             center,
             ..Default::default()
         };
-        assert_eq!(center, sphere.center());
+        assert_eq!(&center, sphere.center());
     }
 
     #[test]
