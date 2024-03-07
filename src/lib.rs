@@ -1,3 +1,6 @@
+use core::GeneratorRef;
+
+pub mod core;
 pub mod geometry;
 #[cfg(feature = "image")]
 pub mod image;
@@ -7,6 +10,10 @@ pub trait Generator<I>: Sized + Clone {
     type Output;
 
     fn generate(&self, input: I) -> Self::Output;
+
+    fn as_ref(&self) -> GeneratorRef<Self> {
+        GeneratorRef::new(self)
+    }
 
     fn map<O, F>(self, f: F) -> ops::MapOutput<Self, F>
     where

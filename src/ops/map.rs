@@ -68,3 +68,25 @@ where
         self.generator.bounding_box()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::core::Constant;
+    use crate::ops::MapOutput;
+    use crate::Generator;
+
+    #[test]
+    fn map_by_value_works() {
+        let gen = Constant::new(1);
+        let mapped = gen.map(|x| x + 1);
+        assert_eq!(mapped.generate(0), 2);
+    }
+
+    #[test]
+    fn map_by_ref_works() {
+        let gen = Constant::new(1);
+        let mapped = MapOutput::new(gen.as_ref(), |x| x + 1);
+        assert_eq!(mapped.generate(0), 2);
+        assert_eq!(gen.generate(0), 1);
+    }
+}
