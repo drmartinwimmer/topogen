@@ -15,12 +15,12 @@ pub trait Generator<I>: Sized + Clone {
         GeneratorRef::new(self)
     }
 
-    fn map<O, F>(self, f: F) -> ops::MapOutput<Self, F>
+    fn map<O, F>(self, f: F) -> ops::Map<Self, F>
     where
         Self: Sized,
         F: Fn(Self::Output) -> O,
     {
-        ops::MapOutput::new(self, f)
+        ops::Map::new(self, f)
     }
 
     fn map_input<O, F>(self, f: F) -> ops::MapInput<Self, F>

@@ -2,18 +2,18 @@ use crate::geometry::{object::BoundingBox, WithBoundingBox};
 use crate::Generator;
 
 #[derive(Debug, Clone)]
-pub struct MapOutput<G, F> {
+pub struct Map<G, F> {
     generator: G,
     mapper: F,
 }
 
-impl<G, F> MapOutput<G, F> {
+impl<G, F> Map<G, F> {
     pub(crate) fn new(generator: G, mapper: F) -> Self {
         Self { generator, mapper }
     }
 }
 
-impl<G, F, I, O> Generator<I> for MapOutput<G, F>
+impl<G, F, I, O> Generator<I> for Map<G, F>
 where
     G: Generator<I>,
     F: Fn(G::Output) -> O + Clone,
@@ -25,7 +25,7 @@ where
     }
 }
 
-impl<G, F, T, const D: usize> WithBoundingBox<T, D> for MapOutput<G, F>
+impl<G, F, T, const D: usize> WithBoundingBox<T, D> for Map<G, F>
 where
     G: WithBoundingBox<T, D>,
     T: Clone + Copy,
@@ -72,7 +72,6 @@ where
 #[cfg(test)]
 mod tests {
     use crate::core::Constant;
-    use crate::ops::MapOutput;
     use crate::Generator;
 
     #[test]
@@ -85,7 +84,7 @@ mod tests {
     #[test]
     fn map_by_ref_works() {
         let gen = Constant::new(1);
-        let mapped = MapOutput::new(gen.as_ref(), |x| x + 1);
+        let mapped = gen.as_ref().map(|x| x + 1);
         assert_eq!(mapped.generate(0), 2);
         assert_eq!(gen.generate(0), 1);
     }
