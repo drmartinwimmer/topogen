@@ -7,7 +7,7 @@ pub mod image;
 pub mod ops;
 pub mod traits;
 
-pub trait Generator<I>: Sized + Clone {
+pub trait Generator<I>: Sized {
     type Output;
 
     fn generate(&self, input: I) -> Self::Output;

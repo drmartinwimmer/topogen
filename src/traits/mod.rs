@@ -2,4 +2,4 @@ mod bound;
 mod euclidean;
 
 pub use bound::Bounded;
-pub use euclidean::Coordinate;
+pub use euclidean::{Coordinate, Euclidean};

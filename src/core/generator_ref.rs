@@ -1,6 +1,6 @@
 use crate::{
     ops::{Bitmap, Union, UnionError},
-    traits::{Bounded, Coordinate},
+    traits::{Bounded, Coordinate, Euclidean},
     Generator,
 };
 
@@ -21,6 +21,11 @@ impl<'a, G: Generator<I>, I> Generator<I> for GeneratorRef<'a, G> {
     fn generate(&self, input: I) -> G::Output {
         self.generator.generate(input)
     }
+}
+
+impl<'a, G, T: Coordinate, const D: usize> Euclidean<T, D> for GeneratorRef<'a, G> where
+    G: Euclidean<T, D>
+{
 }
 
 impl<'a, G, T, const D: usize> Bounded<T, D> for GeneratorRef<'a, G>

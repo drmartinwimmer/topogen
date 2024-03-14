@@ -1,8 +1,8 @@
 use super::{Union, UnionError};
-use crate::traits::{Bounded, Coordinate};
+use crate::traits::{Bounded, Coordinate, Euclidean};
 use crate::Generator;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Map<G, F> {
     generator: G,
     mapper: F,
@@ -24,6 +24,13 @@ where
     fn generate(&self, input: I) -> Self::Output {
         (self.mapper)(self.generator.generate(input))
     }
+}
+
+impl<G, F, T, const D: usize> Euclidean<T, D> for Map<G, F>
+where
+    T: Coordinate,
+    G: Euclidean<T, D>,
+{
 }
 
 impl<G, F, T, const D: usize> Bounded<T, D> for Map<G, F>
@@ -51,7 +58,7 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct MapInput<G, F> {
     generator: G,
     mapper: F,

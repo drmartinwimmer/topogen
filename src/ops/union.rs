@@ -4,7 +4,7 @@ use crate::{
     Generator,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Union<T, G, F, const D: usize>
 where
     T: Coordinate,

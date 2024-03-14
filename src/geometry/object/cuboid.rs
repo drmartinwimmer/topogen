@@ -1,6 +1,6 @@
 use crate::geometry::{object::BoundingBox, GeometricObject, WithCenter};
 use crate::ops::{Bitmap, Union, UnionError};
-use crate::traits::{Bounded, Coordinate};
+use crate::traits::{Bounded, Coordinate, Euclidean};
 
 #[derive(Debug, Clone)]
 pub struct Cuboid<T, const D: usize> {
@@ -13,6 +13,8 @@ impl<T: Clone + Copy, const D: usize> WithCenter<T, D> for Cuboid<T, D> {
         &self.center
     }
 }
+
+impl<T: Coordinate, const D: usize> Euclidean<T, D> for Cuboid<T, D> {}
 
 impl<T, const D: usize> Bounded<T, D> for Cuboid<T, D>
 where

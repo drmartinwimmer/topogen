@@ -1,11 +1,11 @@
-use super::Coordinate;
+use super::{euclidean::Euclidean, Coordinate};
 use crate::{
     geometry::object::BoundingBox,
     ops::{Union, UnionError},
     Generator,
 };
 
-pub trait Bounded<T, const D: usize>: Sized + Clone
+pub trait Bounded<T, const D: usize>: Euclidean<T, D>
 where
     T: Coordinate,
 {

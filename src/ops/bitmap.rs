@@ -1,10 +1,10 @@
-use crate::traits::{Bounded, Coordinate};
+use crate::traits::{Bounded, Coordinate, Euclidean};
 use crate::Generator;
 use std::marker::PhantomData;
 
 use super::{Union, UnionError};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Bitmap<T, G, const D: usize> {
     i: PhantomData<[T; D]>,
     pub generator: G,
@@ -30,6 +30,8 @@ where
         self.generator.within(input)
     }
 }
+
+impl<T: Coordinate, G, const D: usize> Euclidean<T, D> for Bitmap<T, G, D> {}
 
 impl<T, G, const D: usize> Bounded<T, D> for Bitmap<T, G, D>
 where

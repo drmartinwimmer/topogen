@@ -23,3 +23,5 @@ impl<T> Coordinate for T where
         + std::iter::Sum
 {
 }
+
+pub trait Euclidean<T: Coordinate, const D: usize>: Sized {}

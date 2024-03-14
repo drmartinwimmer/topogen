@@ -2,7 +2,7 @@ use crate::geometry::{object::BoundingBox, Cartesian};
 use crate::traits::Bounded;
 use crate::Generator;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Repeat<T, C: Cartesian<T, D>, const D: usize> {
     pub cartesian: C,
     pub center: [T; D],

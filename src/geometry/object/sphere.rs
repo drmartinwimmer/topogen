@@ -1,6 +1,6 @@
 use crate::geometry::{object::BoundingBox, GeometricObject, WithCenter, WithCenterDistance};
 use crate::ops::{Bitmap, Union, UnionError};
-use crate::traits::{Bounded, Coordinate};
+use crate::traits::{Bounded, Coordinate, Euclidean};
 
 #[derive(Debug, Clone)]
 pub struct Sphere<T, const D: usize> {
@@ -8,11 +8,13 @@ pub struct Sphere<T, const D: usize> {
     pub center: [T; D],
 }
 
-impl<T: Clone + Copy, const D: usize> WithCenter<T, D> for Sphere<T, D> {
+impl<T: Coordinate, const D: usize> WithCenter<T, D> for Sphere<T, D> {
     fn center(&self) -> &[T; D] {
         &self.center
     }
 }
+
+impl<T: Coordinate, const D: usize> Euclidean<T, D> for Sphere<T, D> {}
 
 impl<T, const D: usize> Bounded<T, D> for Sphere<T, D>
 where
