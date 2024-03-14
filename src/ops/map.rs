@@ -1,6 +1,5 @@
 use super::{Union, UnionError};
-use crate::traits::{Bounded, Coordinate, Euclidean};
-use crate::Generator;
+use crate::traits::{Bounded, Coordinate, Euclidean, Generator};
 
 #[derive(Debug)]
 pub struct Map<G, F> {
@@ -85,7 +84,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::core::Constant;
-    use crate::Generator;
+    use crate::traits::Generator;
 
     #[test]
     fn map_by_value_works() {

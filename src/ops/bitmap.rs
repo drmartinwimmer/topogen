@@ -1,5 +1,4 @@
-use crate::traits::{Bounded, Coordinate, Euclidean};
-use crate::Generator;
+use crate::traits::{Bounded, Coordinate, Euclidean, Generator};
 use std::marker::PhantomData;
 
 use super::{Union, UnionError};

@@ -1,7 +1,11 @@
 extern crate generative_map;
 extern crate image;
 
-use generative_map::{geometry::object::Sphere, image::Image, traits::Bounded, Generator};
+use generative_map::{
+    geometry::object::Sphere,
+    image::Image,
+    traits::{Bounded, Generator},
+};
 
 fn main() {
     let circle = Sphere {

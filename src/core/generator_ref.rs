@@ -1,7 +1,6 @@
 use crate::{
     ops::{Bitmap, Union, UnionError},
-    traits::{Bounded, Coordinate, Euclidean},
-    Generator,
+    traits::{Bounded, Coordinate, Euclidean, Generator},
 };
 
 #[derive(Clone)]

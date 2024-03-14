@@ -4,8 +4,7 @@ pub mod palette;
 use num_traits::AsPrimitive;
 
 use crate::geometry::object::{BoundingBox, DimensionBound};
-use crate::traits::{Bounded, Coordinate};
-use crate::Generator;
+use crate::traits::{Bounded, Coordinate, Generator};
 use std::fmt::Display;
 
 pub trait Image<T: Display>: Generator<[T; 2]> {
@@ -109,7 +108,10 @@ mod tests {
     use tempdir::TempDir;
 
     use super::Image;
-    use crate::{geometry::object::Cuboid, traits::Bounded, Generator};
+    use crate::{
+        geometry::object::Cuboid,
+        traits::{Bounded, Generator},
+    };
 
     #[test]
     fn saves_image() {

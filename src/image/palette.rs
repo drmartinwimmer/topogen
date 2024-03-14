@@ -42,9 +42,9 @@ impl IntoPixel for Hsla<encoding::Srgb, f32> {
 
 #[cfg(test)]
 mod tests {
+    use crate::geometry::object::Cuboid;
     use crate::image::Image;
-    use crate::traits::Bounded;
-    use crate::{geometry::object::Cuboid, Generator};
+    use crate::traits::{Bounded, Generator};
     use palette::{Hsl, RgbHue};
     use tempdir::TempDir;
 

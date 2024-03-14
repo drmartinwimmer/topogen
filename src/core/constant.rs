@@ -1,4 +1,4 @@
-use crate::Generator;
+use crate::traits::Generator;
 
 #[derive(Clone)]
 pub struct Constant<T: Copy> {

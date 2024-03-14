@@ -101,8 +101,7 @@ impl_cuboid_float!(f32, f64);
 mod tests {
     use super::Cuboid;
     use crate::geometry::GeometricObject;
-    use crate::traits::{Bounded, Center};
-    use crate::Generator;
+    use crate::traits::{Bounded, Center, Generator};
 
     #[test]
     fn generates_cuboid() {

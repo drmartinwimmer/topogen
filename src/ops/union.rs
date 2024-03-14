@@ -1,7 +1,6 @@
 use crate::{
     geometry::object::{bounding_box, BoundingBox},
-    traits::{Bounded, Coordinate},
-    Generator,
+    traits::{Bounded, Coordinate, Generator},
 };
 
 #[derive(Debug)]

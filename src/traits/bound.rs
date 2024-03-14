@@ -1,8 +1,7 @@
-use super::{euclidean::Euclidean, Coordinate};
+use super::{euclidean::Euclidean, Coordinate, Generator};
 use crate::{
     geometry::object::BoundingBox,
     ops::{Union, UnionError},
-    Generator,
 };
 
 pub trait Bounded<T, const D: usize>: Euclidean<T, D>
