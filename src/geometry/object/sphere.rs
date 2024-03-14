@@ -59,33 +59,24 @@ macro_rules! impl_geometric_object {
     };
 }
 
-macro_rules! impl_default {
-    ($t:ty) => {
-        impl<const D: usize> Default for Sphere<$t, D> {
-            fn default() -> Self {
-                Self {
-                    radius: 1 as $t,
-                    center: [<$t>::default(); D],
-                }
-            }
+impl<T, const D: usize> Default for Sphere<T, D>
+where
+    T: Coordinate + num_traits::One + Default,
+{
+    fn default() -> Self {
+        Self {
+            radius: T::one(),
+            center: [T::default(); D],
         }
-    };
-}
-
-macro_rules! impl_sphere_int {
-    ($($t:ty),+) => {$(
-        impl_default!($t);
-    )+};
+    }
 }
 
 macro_rules! impl_sphere_float {
     ($($t:ty),+) => {$(
         impl_geometric_object!($t);
-        impl_default!($t);
     )+};
 }
 
-impl_sphere_int!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize);
 impl_sphere_float!(f32, f64);
 
 #[cfg(test)]

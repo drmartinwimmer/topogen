@@ -47,17 +47,16 @@ where
     }
 }
 
-macro_rules! impl_cuboid_default {
-    ($t:ty) => {
-        impl<const D: usize> Default for Cuboid<$t, D> {
-            fn default() -> Self {
-                Self {
-                    half_edges: [1 as $t; D],
-                    center: [<$t>::default(); D],
-                }
-            }
+impl<T, const D: usize> Default for Cuboid<T, D>
+where
+    T: Coordinate + Default + num_traits::One,
+{
+    fn default() -> Self {
+        Self {
+            center: [T::default(); D],
+            half_edges: [T::one(); D],
         }
-    };
+    }
 }
 
 macro_rules! impl_geometric_object {
@@ -92,26 +91,11 @@ macro_rules! impl_geometric_object {
 
 macro_rules! impl_cuboid_float {
     ($($t:ty),+) => {$(
-        impl_cuboid_default!($t);
         impl_geometric_object!($t, $t);
     )+};
 }
 
-macro_rules! impl_cuboid_int {
-    ($($t:ty),+) => {$(
-        impl_cuboid_default!($t);
-    )+};
-}
-
-macro_rules! impl_cuboid_uint {
-    ($($t:ty),+) => {$(
-        impl_cuboid_default!($t);
-    )+};
-}
-
 impl_cuboid_float!(f32, f64);
-impl_cuboid_int!(i8, i16, i32, i64, i128, isize);
-impl_cuboid_uint!(u8, u16, u32, u64, u128, usize);
 
 #[cfg(test)]
 mod tests {
