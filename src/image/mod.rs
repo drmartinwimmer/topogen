@@ -1,8 +1,10 @@
 #[cfg(feature = "palette")]
 pub mod palette;
 
+use num_traits::AsPrimitive;
+
 use crate::geometry::object::{BoundingBox, DimensionBound};
-use crate::traits::Bounded;
+use crate::traits::{Bounded, Coordinate};
 use crate::Generator;
 use std::fmt::Display;
 
@@ -43,63 +45,52 @@ impl<T> IntoPixel for image::LumaA<T> {
     }
 }
 
-macro_rules! impl_image {
-    ($t:ty) => {
-        impl<C, G> Image<$t> for G
-        where
-            G: Generator<[$t; 2], Output = C> + Bounded<$t, 2>,
-            C: IntoPixel,
-            C::Pixel: image::PixelWithColorType,
-            [<C::Pixel as image::Pixel>::Subpixel]: image::EncodableLayout,
-        {
-            fn save_image(self, path: &str, step: [$t; 2]) -> Result<(), Error<$t>> {
-                let bounds = match self.bounding_box() {
-                    BoundingBox::Empty => return Err(Error::EmptyBoundingBox),
-                    BoundingBox::Unbounded => return Err(Error::UnboundedBoundingBox),
-                    BoundingBox::Bounded(bounds) => bounds,
-                };
-                let (mut min, mut max) = ([<$t>::default(); 2], [<$t>::default(); 2]);
-                for i in 0..2 {
-                    (min[i], max[i]) = match bounds[i] {
-                        DimensionBound::Range(min, max) => (min, max),
-                        DimensionBound::Empty => return Err(Error::EmptyBoundingBox),
-                        _ => return Err(Error::UnboundedBoundingBox),
-                    };
-                }
-                let steps = [
-                    ((max[0] - min[0]) / step[0]) as u32 - 1,
-                    ((max[1] - min[1]) / step[1]) as u32 - 1,
-                ];
-                let size = [steps[0] as $t * step[0], steps[1] as $t * step[1]];
-                min = [
-                    min[0] + (max[0] - min[0] - size[0]) / (2 as $t),
-                    min[1] + (max[1] - min[1] - size[1]) / (2 as $t),
-                ];
-                let mut image = image::ImageBuffer::<
-                    C::Pixel,
-                    Vec<<C::Pixel as image::Pixel>::Subpixel>,
-                >::new(steps[0], steps[1]);
-                for ix in 0..steps[0] {
-                    let gx = min[0] + ix as $t * step[0];
-                    for iy in 0..steps[1] {
-                        let gy = min[1] + iy as $t * step[1];
-                        image.put_pixel(ix, iy, self.generate([gx, gy]).into_pixel());
-                    }
-                }
-                image.save(path)?;
-                Ok(())
+impl<T, C, G> Image<T> for G
+where
+    T: Coordinate + Default + num_traits::One + AsPrimitive<u32>,
+    u32: AsPrimitive<T>,
+    G: Generator<[T; 2], Output = C> + Bounded<T, 2>,
+    C: IntoPixel,
+    C::Pixel: image::PixelWithColorType,
+    [<C::Pixel as image::Pixel>::Subpixel]: image::EncodableLayout,
+{
+    fn save_image(self, path: &str, step: [T; 2]) -> Result<(), Error<T>> {
+        let bounds = match self.bounding_box() {
+            BoundingBox::Empty => return Err(Error::EmptyBoundingBox),
+            BoundingBox::Unbounded => return Err(Error::UnboundedBoundingBox),
+            BoundingBox::Bounded(bounds) => bounds,
+        };
+        let (mut min, mut max) = ([T::default(); 2], [T::default(); 2]);
+        for i in 0..2 {
+            (min[i], max[i]) = match bounds[i] {
+                DimensionBound::Range(min, max) => (min, max),
+                DimensionBound::Empty => return Err(Error::EmptyBoundingBox),
+                _ => return Err(Error::UnboundedBoundingBox),
+            };
+        }
+        let steps = [((max[0] - min[0]) / step[0]), ((max[1] - min[1]) / step[1])];
+        let size = [steps[0] as T * step[0], steps[1] as T * step[1]];
+        let two: T = T::one() + T::one();
+        min = [
+            min[0] + (max[0] - min[0] - size[0]) / two,
+            min[1] + (max[1] - min[1] - size[1]) / two,
+        ];
+        let mut image =
+            image::ImageBuffer::<C::Pixel, Vec<<C::Pixel as image::Pixel>::Subpixel>>::new(
+                steps[0].as_(),
+                steps[1].as_(),
+            );
+        for ix in 0..steps[0].as_() {
+            let gx = min[0] + ix.as_() * step[0];
+            for iy in 0..steps[1].as_() {
+                let gy = min[1] + iy.as_() * step[1];
+                image.put_pixel(ix, iy, self.generate([gx, gy]).into_pixel());
             }
         }
-    };
+        image.save(path)?;
+        Ok(())
+    }
 }
-
-macro_rules! impl_image_all {
-    ($($t:ty),+) => {$(
-        impl_image!($t);
-    )+};
-}
-
-impl_image_all!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64);
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error<T: Display> {
