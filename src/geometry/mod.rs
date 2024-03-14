@@ -1,13 +1,11 @@
-mod center;
 pub mod object;
 
 //use crate::ops::Repeat;
 use crate::traits::{Bounded, Coordinate};
-pub use center::{WithCenter, WithCenterDistance};
 
 pub trait GeometricObject<T, const D: usize>: Sized + Clone + Bounded<T, D>
 where
-    T: Coordinate,
+    T: Coordinate + num_traits::Float,
 {
     fn distance(&self, point: [T; D]) -> T;
 }

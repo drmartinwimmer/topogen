@@ -166,6 +166,7 @@ name = "generative_map"
 version = "0.1.0"
 dependencies = [
  "image",
+ "num-traits",
  "palette",
  "tempdir",
  "thiserror",

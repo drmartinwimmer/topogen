@@ -1,6 +1,6 @@
-use crate::geometry::{object::BoundingBox, GeometricObject, WithCenter, WithCenterDistance};
+use crate::geometry::{object::BoundingBox, GeometricObject};
 use crate::ops::{Bitmap, Union, UnionError};
-use crate::traits::{Bounded, Coordinate, Euclidean};
+use crate::traits::{Bounded, Center, Coordinate, Euclidean};
 
 #[derive(Debug, Clone)]
 pub struct Sphere<T, const D: usize> {
@@ -8,7 +8,7 @@ pub struct Sphere<T, const D: usize> {
     pub center: [T; D],
 }
 
-impl<T: Coordinate, const D: usize> WithCenter<T, D> for Sphere<T, D> {
+impl<T: Coordinate, const D: usize> Center<T, D> for Sphere<T, D> {
     fn center(&self) -> &[T; D] {
         &self.center
     }
@@ -74,7 +74,6 @@ macro_rules! impl_default {
 
 macro_rules! impl_sphere_int {
     ($($t:ty),+) => {$(
-        impl_geometric_object!($t);
         impl_default!($t);
     )+};
 }
@@ -92,8 +91,8 @@ impl_sphere_float!(f32, f64);
 #[cfg(test)]
 mod tests {
     use super::Sphere;
-    use crate::geometry::{GeometricObject, WithCenter, WithCenterDistance};
-    use crate::traits::Bounded;
+    use crate::geometry::GeometricObject;
+    use crate::traits::{Bounded, Center};
     use crate::Generator;
 
     #[test]
@@ -176,15 +175,6 @@ mod tests {
         assert_eq!(2.0, sphere.center_distance([2.0, 0.0]));
         assert_eq!(2.0, sphere.center_distance([0.0, 2.0]));
         assert_eq!(5.0, sphere.center_distance([3.0, 4.0]));
-    }
-
-    #[test]
-    fn returns_center_distance_for_int() {
-        let sphere: Sphere<i8, 2> = Sphere::default();
-        assert_eq!(0, sphere.center_distance([0, 0]));
-        assert_eq!(2, sphere.center_distance([2, 0]));
-        assert_eq!(2, sphere.center_distance([0, 2]));
-        assert_eq!(5, sphere.center_distance([3, 4]));
     }
 
     #[test]

@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 image = { version = "0.24.9", optional = true }
+num-traits = "0.2.18"
 palette = { version = "0.7.5", optional = true }
 thiserror = "1.0.57"
 
