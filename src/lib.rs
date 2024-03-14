@@ -5,6 +5,7 @@ pub mod geometry;
 #[cfg(feature = "image")]
 pub mod image;
 pub mod ops;
+pub mod traits;
 
 pub trait Generator<I>: Sized + Clone {
     type Output;
@@ -32,17 +33,9 @@ pub trait Generator<I>: Sized + Clone {
     }
 }
 
-pub trait Bounded<I>: Generator<I> {
-    fn within_bounds(&self, input: I) -> bool;
-    fn union(&self, other: &Self) -> Self;
-    fn intersect(&self, other: &Self) -> Self;
-    fn sub(&self, other: &Self) -> Self;
-}
-
 #[cfg(test)]
 mod tests {
-    use super::Generator;
-    use crate::geometry::{object::Sphere, GeometricObject};
+    use crate::{geometry::object::Sphere, traits::Bounded, Generator};
 
     #[test]
     fn map_works() {

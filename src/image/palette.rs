@@ -43,17 +43,15 @@ impl IntoPixel for Hsla<encoding::Srgb, f32> {
 #[cfg(test)]
 mod tests {
     use crate::image::Image;
-    use crate::{
-        geometry::{object::Cuboid, GeometricObject},
-        Generator,
-    };
+    use crate::traits::Bounded;
+    use crate::{geometry::object::Cuboid, Generator};
     use palette::{Hsl, RgbHue};
     use tempdir::TempDir;
 
     #[test]
     fn saves_image_with_palette() {
         let cuboid = Cuboid {
-            sides: [2, 2],
+            half_edges: [2, 2],
             center: [0, 0],
         };
         let image = cuboid.bitmap().map(|b| match b {

@@ -1,24 +1,32 @@
-use crate::geometry::{object::BoundingBox, Cartesian, WithBoundingBox};
+use crate::geometry::{object::BoundingBox, Cartesian};
+use crate::traits::Bounded;
 use crate::Generator;
 
 #[derive(Debug, Clone)]
-pub struct Repeat<T, G: Cartesian<T, D>, const D: usize> {
-    pub generator: G,
+pub struct Repeat<T, C: Cartesian<T, D>, const D: usize> {
+    pub cartesian: C,
     pub center: [T; D],
     pub repeat: [T; D],
 }
 
-impl<T, G: Cartesian<T, D>, const D: usize> WithBoundingBox<T, D> for Repeat<T, G, D>
-where
-    T: Clone + Copy,
-{
-    fn bounding_box(&self) -> BoundingBox<T, D> {
-        BoundingBox::Unbounded
-    }
-}
-
 macro_rules! impl_repeat {
     ($($t:ty),+) => {$(
+        impl<C: Cartesian<$t, D>, const D: usize> Bounded<[$t; D]> for Repeat<$t, C, D>
+        where
+            C: Bounded<[$t; D]>,
+        {
+            type UpperBound = BoundingBox<$t, D>;
+            type Bitmap = C::Bitmap;
+
+            fn within(&self, point: [$t; D]) -> bool {
+                self.cartesian.within(point)
+            }
+
+            fn upper_bound(&self) -> BoundingBox<$t, D> {
+                BoundingBox::Unbounded
+            }
+        }
+
         impl<G: Cartesian<$t, D>, const D: usize> Generator<[$t; D]> for Repeat<$t, G, D> {
             type Output = G::Output;
 

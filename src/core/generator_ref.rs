@@ -1,5 +1,6 @@
 use crate::{
-    geometry::{object::BoundingBox, WithBoundingBox},
+    ops::{Bitmap, Union, UnionError},
+    traits::{Bounded, Coordinate},
     Generator,
 };
 
@@ -14,20 +15,39 @@ impl<'a, G> GeneratorRef<'a, G> {
     }
 }
 
-impl<'a, G: Clone + Generator<T>, T: Copy + Clone> Generator<T> for GeneratorRef<'a, G> {
+impl<'a, G: Generator<I>, I> Generator<I> for GeneratorRef<'a, G> {
     type Output = G::Output;
 
-    fn generate(&self, input: T) -> G::Output {
+    fn generate(&self, input: I) -> G::Output {
         self.generator.generate(input)
     }
 }
 
-impl<'a, G, T, const D: usize> WithBoundingBox<T, D> for GeneratorRef<'a, G>
+impl<'a, G, T, const D: usize> Bounded<T, D> for GeneratorRef<'a, G>
 where
-    G: WithBoundingBox<T, D>,
-    T: Clone + Copy,
+    T: Coordinate,
+    G: Bounded<T, D>,
 {
-    fn bounding_box(&self) -> BoundingBox<T, D> {
+    type Bitmap = Bitmap<T, Self, D>;
+
+    fn within(&self, input: [T; D]) -> bool {
+        self.generator.within(input)
+    }
+
+    fn union<F>(
+        self,
+        mut other: Vec<Self>,
+        reducer: F,
+    ) -> Result<Union<T, Self, F, D>, UnionError<T>> {
+        other.push(self);
+        Union::new(other, reducer)
+    }
+
+    fn bounding_box(&self) -> crate::geometry::object::BoundingBox<T, D> {
         self.generator.bounding_box()
+    }
+
+    fn bitmap(self) -> Self::Bitmap {
+        Bitmap::new(self)
     }
 }

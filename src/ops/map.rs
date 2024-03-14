@@ -1,4 +1,5 @@
-use crate::geometry::{object::BoundingBox, WithBoundingBox};
+use super::{Union, UnionError};
+use crate::traits::{Bounded, Coordinate};
 use crate::Generator;
 
 #[derive(Debug, Clone)]
@@ -25,12 +26,27 @@ where
     }
 }
 
-impl<G, F, T, const D: usize> WithBoundingBox<T, D> for Map<G, F>
+impl<G, F, T, const D: usize> Bounded<T, D> for Map<G, F>
 where
-    G: WithBoundingBox<T, D>,
-    T: Clone + Copy,
+    T: Coordinate,
+    G: Bounded<T, D>,
+    F: Clone,
 {
-    fn bounding_box(&self) -> BoundingBox<T, D> {
+    type Bitmap = G::Bitmap;
+
+    fn within(&self, input: [T; D]) -> bool {
+        self.generator.within(input)
+    }
+
+    fn union<R>(self, other: Vec<Self>, reducer: R) -> Result<Union<T, Self, R, D>, UnionError<T>> {
+        Union::new(other, reducer)
+    }
+
+    fn bitmap(self) -> Self::Bitmap {
+        self.generator.bitmap()
+    }
+
+    fn bounding_box(&self) -> crate::geometry::object::BoundingBox<T, D> {
         self.generator.bounding_box()
     }
 }
@@ -56,16 +72,6 @@ where
 
     fn generate(&self, input: I) -> Self::Output {
         self.generator.generate((self.mapper)(input))
-    }
-}
-
-impl<G, F, T, const D: usize> WithBoundingBox<T, D> for MapInput<G, F>
-where
-    G: WithBoundingBox<T, D>,
-    T: Clone + Copy,
-{
-    fn bounding_box(&self) -> BoundingBox<T, D> {
-        self.generator.bounding_box()
     }
 }
 

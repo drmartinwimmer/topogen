@@ -1,7 +1,6 @@
-use crate::geometry::{
-    object::{Bound, BoundingBox},
-    GeometricObject, WithBoundingBox, WithCenter, WithCenterDistance,
-};
+use crate::geometry::{object::BoundingBox, GeometricObject, WithCenter, WithCenterDistance};
+use crate::ops::{Bitmap, Union, UnionError};
+use crate::traits::{Bounded, Coordinate};
 
 #[derive(Debug, Clone)]
 pub struct Sphere<T, const D: usize> {
@@ -15,23 +14,51 @@ impl<T: Clone + Copy, const D: usize> WithCenter<T, D> for Sphere<T, D> {
     }
 }
 
-macro_rules! impl_sphere {
-    ($t:ty, $sqrtt:ty) => {
-        impl<const D: usize> GeometricObject<$t, D> for Sphere<$t, D> {
-            fn within(&self, point: [$t; D]) -> bool {
-                let radius: $t = point
-                    .into_iter()
-                    .zip(self.center)
-                    .map(|(p, c)| (p - c) * (p - c))
-                    .sum();
-                radius < self.radius * self.radius
-            }
+impl<T, const D: usize> Bounded<T, D> for Sphere<T, D>
+where
+    T: Coordinate,
+{
+    type Bitmap = Bitmap<T, Self, D>;
 
+    fn within(&self, point: [T; D]) -> bool {
+        let radius: T = point
+            .into_iter()
+            .zip(self.center)
+            .map(|(p, c)| (p - c) * (p - c))
+            .sum();
+        radius < self.radius * self.radius
+    }
+
+    fn bounding_box(&self) -> BoundingBox<T, D> {
+        BoundingBox::new_centered(self.center, [self.radius; D])
+    }
+
+    fn bitmap(self) -> Self::Bitmap {
+        Bitmap::new(self)
+    }
+
+    fn union<F>(
+        self,
+        mut other: Vec<Self>,
+        reducer: F,
+    ) -> Result<Union<T, Self, F, D>, UnionError<T>> {
+        other.push(self);
+        Union::new(other, reducer)
+    }
+}
+
+macro_rules! impl_geometric_object {
+    ($t:ty) => {
+        impl<const D: usize> GeometricObject<$t, D> for Sphere<$t, D> {
             fn distance(&self, point: [$t; D]) -> $t {
                 <$t>::max(self.center_distance(point) - self.radius, 0 as $t)
             }
         }
+    };
+}
 
+macro_rules! impl_default {
+    ($t:ty) => {
         impl<const D: usize> Default for Sphere<$t, D> {
             fn default() -> Self {
                 Self {
@@ -43,30 +70,17 @@ macro_rules! impl_sphere {
     };
 }
 
-macro_rules! impl_sphere_bounding_box {
-    ($t:ty) => {
-        impl<const D: usize> WithBoundingBox<$t, D> for Sphere<$t, D> {
-            fn bounding_box(&self) -> BoundingBox<$t, D> {
-                BoundingBox::Bounded(Bound::<$t, D>::new_centered(
-                    self.center,
-                    [self.radius * (2 as $t); D],
-                ))
-            }
-        }
-    };
-}
-
 macro_rules! impl_sphere_int {
     ($($t:ty),+) => {$(
-        impl_sphere_bounding_box!($t);
-        impl_sphere!($t, f64);
+        impl_geometric_object!($t);
+        impl_default!($t);
     )+};
 }
 
 macro_rules! impl_sphere_float {
     ($($t:ty),+) => {$(
-        impl_sphere_bounding_box!($t);
-        impl_sphere!($t, $t);
+        impl_geometric_object!($t);
+        impl_default!($t);
     )+};
 }
 
@@ -77,6 +91,7 @@ impl_sphere_float!(f32, f64);
 mod tests {
     use super::Sphere;
     use crate::geometry::{GeometricObject, WithCenter, WithCenterDistance};
+    use crate::traits::Bounded;
     use crate::Generator;
 
     #[test]

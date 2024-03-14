@@ -1,11 +1,13 @@
 #[cfg(feature = "palette")]
 pub mod palette;
 
-use crate::geometry::WithBoundingBox;
+use crate::geometry::object::{BoundingBox, DimensionBound};
+use crate::traits::Bounded;
 use crate::Generator;
+use std::fmt::Display;
 
-pub trait Image<T>: Generator<[T; 2]> {
-    fn save_image(self, path: &str, step: [T; 2]) -> Result<(), Error>;
+pub trait Image<T: Display>: Generator<[T; 2]> {
+    fn save_image(self, path: &str, step: [T; 2]) -> Result<(), Error<T>>;
 }
 
 pub trait IntoPixel {
@@ -45,25 +47,42 @@ macro_rules! impl_image {
     ($t:ty) => {
         impl<C, G> Image<$t> for G
         where
-            G: Generator<[$t; 2], Output = C> + WithBoundingBox<$t, 2>,
+            G: Generator<[$t; 2], Output = C> + Bounded<$t, 2>,
             C: IntoPixel,
             C::Pixel: image::PixelWithColorType,
             [<C::Pixel as image::Pixel>::Subpixel]: image::EncodableLayout,
         {
-            fn save_image(self, path: &str, step: [$t; 2]) -> Result<(), Error> {
-                let (start, end) = self.bounding_box().bounds()?;
-                let size = [
-                    ((end[0] - start[0]) / step[0]) as u32,
-                    ((end[1] - start[1]) / step[1]) as u32,
+            fn save_image(self, path: &str, step: [$t; 2]) -> Result<(), Error<$t>> {
+                let bounds = match self.bounding_box() {
+                    BoundingBox::Empty => return Err(Error::EmptyBoundingBox),
+                    BoundingBox::Unbounded => return Err(Error::UnboundedBoundingBox),
+                    BoundingBox::Bounded(bounds) => bounds,
+                };
+                let (mut min, mut max) = ([<$t>::default(); 2], [<$t>::default(); 2]);
+                for i in 0..2 {
+                    (min[i], max[i]) = match bounds[i] {
+                        DimensionBound::Range(min, max) => (min, max),
+                        DimensionBound::Empty => return Err(Error::EmptyBoundingBox),
+                        _ => return Err(Error::UnboundedBoundingBox),
+                    };
+                }
+                let steps = [
+                    ((max[0] - min[0]) / step[0]) as u32 - 1,
+                    ((max[1] - min[1]) / step[1]) as u32 - 1,
+                ];
+                let size = [steps[0] as $t * step[0], steps[1] as $t * step[1]];
+                min = [
+                    min[0] + (max[0] - min[0] - size[0]) / (2 as $t),
+                    min[1] + (max[1] - min[1] - size[1]) / (2 as $t),
                 ];
                 let mut image = image::ImageBuffer::<
                     C::Pixel,
                     Vec<<C::Pixel as image::Pixel>::Subpixel>,
-                >::new(size[0], size[1]);
-                for ix in 0..size[0] {
-                    let gx = start[0] + ix as $t * step[0];
-                    for iy in 0..size[1] {
-                        let gy = start[1] + iy as $t * step[1];
+                >::new(steps[0], steps[1]);
+                for ix in 0..steps[0] {
+                    let gx = min[0] + ix as $t * step[0];
+                    for iy in 0..steps[1] {
+                        let gy = min[1] + iy as $t * step[1];
                         image.put_pixel(ix, iy, self.generate([gx, gy]).into_pixel());
                     }
                 }
@@ -83,11 +102,15 @@ macro_rules! impl_image_all {
 impl_image_all!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64);
 
 #[derive(thiserror::Error, Debug)]
-pub enum Error {
+pub enum Error<T: Display> {
     #[error("Image Error {0:?}")]
     ImageError(#[from] image::ImageError),
-    #[error("Image is unbounded")]
-    BoundingBoxError(#[from] crate::geometry::object::bounding_box::Error),
+    #[error("Computing bounds failed")]
+    BoundingBoxError(#[from] crate::geometry::object::bounding_box::Error<T>),
+    #[error("Bounding box is empty")]
+    EmptyBoundingBox,
+    #[error("Bounding box is unbounded in at least one direction")]
+    UnboundedBoundingBox,
 }
 
 #[cfg(test)]
@@ -95,15 +118,12 @@ mod tests {
     use tempdir::TempDir;
 
     use super::Image;
-    use crate::{
-        geometry::{object::Cuboid, GeometricObject},
-        Generator,
-    };
+    use crate::{geometry::object::Cuboid, traits::Bounded, Generator};
 
     #[test]
     fn saves_image() {
         let cuboid = Cuboid {
-            sides: [2, 2],
+            half_edges: [2, 2],
             center: [0, 0],
         };
         let image = cuboid.bitmap().map(|b| match b {
@@ -115,7 +135,7 @@ mod tests {
         image.save_image(path.to_str().unwrap(), [1, 1]).unwrap();
 
         let saved_image = image::open(path).unwrap();
-        assert_eq!(saved_image.width(), 2);
-        assert_eq!(saved_image.height(), 2);
+        assert_eq!(saved_image.width(), 4);
+        assert_eq!(saved_image.height(), 4);
     }
 }

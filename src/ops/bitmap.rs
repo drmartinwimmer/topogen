@@ -1,39 +1,69 @@
-use crate::geometry::{object::BoundingBox, GeometricObject, WithBoundingBox};
+use crate::traits::{Bounded, Coordinate};
 use crate::Generator;
 use std::marker::PhantomData;
 
+use super::{Union, UnionError};
+
 #[derive(Debug, Clone)]
-pub struct Bitmap<T, O: GeometricObject<T, D>, const D: usize> {
-    t: PhantomData<T>,
-    pub object: O,
+pub struct Bitmap<T, G, const D: usize> {
+    i: PhantomData<[T; D]>,
+    pub generator: G,
 }
 
-impl<T, O: GeometricObject<T, D>, const D: usize> Bitmap<T, O, D> {
-    pub(crate) fn new(object: O) -> Self {
+impl<T, G, const D: usize> Bitmap<T, G, D> {
+    pub(crate) fn new(generator: G) -> Self {
         Self {
-            t: PhantomData,
-            object,
+            i: PhantomData,
+            generator,
         }
     }
 }
 
-impl<T, O: GeometricObject<T, D>, const D: usize> Generator<[T; D]> for Bitmap<T, O, D>
+impl<T, G, const D: usize> Generator<[T; D]> for Bitmap<T, G, D>
 where
-    T: Clone,
+    T: Coordinate,
+    G: Bounded<T, D>,
 {
     type Output = bool;
 
     fn generate(&self, input: [T; D]) -> Self::Output {
-        self.object.within(input)
+        self.generator.within(input)
     }
 }
 
-impl<T, O: GeometricObject<T, D>, const D: usize> WithBoundingBox<T, D> for Bitmap<T, O, D>
+impl<T, G, const D: usize> Bounded<T, D> for Bitmap<T, G, D>
 where
-    O: WithBoundingBox<T, D>,
-    T: Clone + Copy,
+    T: Coordinate,
+    G: Bounded<T, D>,
 {
-    fn bounding_box(&self) -> BoundingBox<T, D> {
-        self.object.bounding_box()
+    type Bitmap = Self;
+
+    fn within(&self, input: [T; D]) -> bool {
+        self.generator.within(input)
+    }
+
+    fn union<F>(
+        self,
+        mut others: Vec<Self>,
+        reducer: F,
+    ) -> Result<Union<T, Self, F, D>, UnionError<T>> {
+        others.push(self);
+        Union::new(others, reducer)
+    }
+
+    // fn intersect(self, other: Self) -> Self {
+    //     self.generator.intersect(other.generator).bitmap()
+    // }
+
+    // fn sub(self, other: Self) -> Self {
+    //     self.generator.sub(other.generator).bitmap()
+    // }
+
+    fn bitmap(self) -> Self::Bitmap {
+        self
+    }
+
+    fn bounding_box(&self) -> crate::geometry::object::BoundingBox<T, D> {
+        self.generator.bounding_box()
     }
 }

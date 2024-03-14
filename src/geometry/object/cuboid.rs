@@ -1,12 +1,11 @@
-use crate::geometry::{
-    object::{Bound, BoundingBox},
-    GeometricObject, WithBoundingBox, WithCenter,
-};
+use crate::geometry::{object::BoundingBox, GeometricObject, WithCenter};
+use crate::ops::{Bitmap, Union, UnionError};
+use crate::traits::{Bounded, Coordinate};
 
 #[derive(Debug, Clone)]
 pub struct Cuboid<T, const D: usize> {
-    pub sides: [T; D],
     pub center: [T; D],
+    pub half_edges: [T; D],
 }
 
 impl<T: Clone + Copy, const D: usize> WithCenter<T, D> for Cuboid<T, D> {
@@ -15,14 +14,35 @@ impl<T: Clone + Copy, const D: usize> WithCenter<T, D> for Cuboid<T, D> {
     }
 }
 
-macro_rules! impl_cuboid_bounding_box {
-    ($t:ty) => {
-        impl<const D: usize> WithBoundingBox<$t, D> for Cuboid<$t, D> {
-            fn bounding_box(&self) -> BoundingBox<$t, D> {
-                BoundingBox::Bounded(Bound::<$t, D>::new_centered(self.center, self.sides))
-            }
-        }
-    };
+impl<T, const D: usize> Bounded<T, D> for Cuboid<T, D>
+where
+    T: Coordinate,
+{
+    type Bitmap = Bitmap<T, Self, D>;
+
+    fn bitmap(self) -> Self::Bitmap {
+        Bitmap::new(self)
+    }
+
+    fn within(&self, point: [T; D]) -> bool {
+        point
+            .into_iter()
+            .zip(self.half_edges.iter().zip(self.center.iter()))
+            .all(|(p, (e, c))| p > *c - *e && p < *c + *e)
+    }
+
+    fn union<F>(
+        self,
+        mut other: Vec<Self>,
+        reducer: F,
+    ) -> Result<Union<T, Self, F, D>, UnionError<T>> {
+        other.push(self);
+        Union::new(other, reducer)
+    }
+
+    fn bounding_box(&self) -> BoundingBox<T, D> {
+        BoundingBox::new_centered(self.center, self.half_edges)
+    }
 }
 
 macro_rules! impl_cuboid_default {
@@ -30,7 +50,7 @@ macro_rules! impl_cuboid_default {
         impl<const D: usize> Default for Cuboid<$t, D> {
             fn default() -> Self {
                 Self {
-                    sides: [1 as $t; D],
+                    half_edges: [1 as $t; D],
                     center: [<$t>::default(); D],
                 }
             }
@@ -38,24 +58,16 @@ macro_rules! impl_cuboid_default {
     };
 }
 
-macro_rules! impl_cuboid_geometric_object_signed {
+macro_rules! impl_geometric_object {
     ($t:ty, $sqrtt:ty) => {
         impl<const D: usize> GeometricObject<$t, D> for Cuboid<$t, D> {
-            fn within(&self, point: [$t; D]) -> bool {
-                point
-                    .into_iter()
-                    .zip(self.sides.iter().zip(self.center.iter()))
-                    .all(|(p, (s, c))| 2 as $t * (p - c).abs() < *s)
-            }
-
             fn distance(&self, point: [$t; D]) -> $t {
                 let mut closest_point = point.clone();
                 closest_point
                     .iter_mut()
-                    .zip(self.sides.iter().zip(self.center.iter()))
-                    .for_each(|(p, (s, c))| {
-                        let half_side = (*s / (2 as $t));
-                        let (left, right) = (*c - half_side, *c + half_side);
+                    .zip(self.half_edges.iter().zip(self.center.iter()))
+                    .for_each(|(p, (e, c))| {
+                        let (left, right) = (*c - *e, *c + *e);
                         *p = if *p < left {
                             left
                         } else if *p > right {
@@ -76,65 +88,24 @@ macro_rules! impl_cuboid_geometric_object_signed {
     };
 }
 
-macro_rules! impl_cuboid_geometric_object_unsigned {
-    ($t:ty, $sqrtt:ty) => {
-        impl<const D: usize> GeometricObject<$t, D> for Cuboid<$t, D> {
-            fn within(&self, point: [$t; D]) -> bool {
-                point
-                    .into_iter()
-                    .zip(self.sides.iter().zip(self.center.iter()))
-                    .all(|(p, (s, c))| 2 as $t * (p - c) < *s)
-            }
-
-            fn distance(&self, point: [$t; D]) -> $t {
-                let mut closest_point = point.clone();
-                closest_point
-                    .iter_mut()
-                    .zip(self.sides.iter().zip(self.center.iter()))
-                    .for_each(|(p, (s, c))| {
-                        let half_side = (*s / (2 as $t));
-                        let (left, right) = (*c - half_side, *c + half_side);
-                        *p = if *p < left {
-                            left
-                        } else if *p > right {
-                            right
-                        } else {
-                            *p
-                        }
-                    });
-
-                let distance: $t = point
-                    .into_iter()
-                    .zip(closest_point)
-                    .map(|(p, c)| (p - c) * (p - c))
-                    .sum();
-                (distance as $sqrtt).sqrt() as $t
-            }
-        }
-    };
-}
-
 macro_rules! impl_cuboid_float {
     ($($t:ty),+) => {$(
-        impl_cuboid_bounding_box!($t);
         impl_cuboid_default!($t);
-        impl_cuboid_geometric_object_signed!($t, $t);
+        impl_geometric_object!($t, $t);
     )+};
 }
 
 macro_rules! impl_cuboid_int {
     ($($t:ty),+) => {$(
-        impl_cuboid_bounding_box!($t);
         impl_cuboid_default!($t);
-        impl_cuboid_geometric_object_signed!($t, f64);
+        impl_geometric_object!($t, f64);
     )+};
 }
 
 macro_rules! impl_cuboid_uint {
     ($($t:ty),+) => {$(
-        impl_cuboid_bounding_box!($t);
         impl_cuboid_default!($t);
-        impl_cuboid_geometric_object_unsigned!($t, f64);
+        impl_geometric_object!($t, f64);
     )+};
 }
 
@@ -146,27 +117,28 @@ impl_cuboid_uint!(u8, u16, u32, u64, u128, usize);
 mod tests {
     use super::Cuboid;
     use crate::geometry::{GeometricObject, WithCenter, WithCenterDistance};
+    use crate::traits::Bounded;
     use crate::Generator;
 
     #[test]
     fn generates_cuboid() {
         let cuboid: Cuboid<f64, 2> = Cuboid::default();
         let cuboid = cuboid.bitmap();
-        assert!(cuboid.generate([0.49, 0.49]));
-        assert!(!cuboid.generate([0.49, 0.5]));
+        assert!(cuboid.generate([0.99, 0.99]));
+        assert!(!cuboid.generate([0.99, 1.0]));
     }
 
     #[test]
     fn cuboid_works_for_negatives() {
         let cuboid: Cuboid<f64, 1> = Cuboid::default();
-        assert!(cuboid.within([-0.49]));
-        assert!(!cuboid.within([-0.5]));
+        assert!(cuboid.within([-0.99]));
+        assert!(!cuboid.within([-1.0]));
     }
 
     #[test]
     fn cuboid_works_across_types() {
         let cuboid: Cuboid<i32, 1> = Cuboid {
-            sides: [10_i32],
+            half_edges: [5_i32],
             ..Default::default()
         };
         assert!(cuboid.within([4]));
@@ -176,7 +148,7 @@ mod tests {
     #[test]
     fn unit_cuboid_works_across_dimensions() {
         let cuboid: Cuboid<i32, 8> = Cuboid {
-            sides: [3_i32; 8],
+            half_edges: [2_i32; 8],
             ..Default::default()
         };
         assert!(cuboid.within([1; 8]));
@@ -185,7 +157,7 @@ mod tests {
     #[test]
     fn cuboid_moves() {
         let cuboid: Cuboid<i32, 2> = Cuboid {
-            sides: [3, 3],
+            half_edges: [2, 2],
             center: [2, 2],
         };
         assert!(!cuboid.within([0, 0]));
@@ -198,7 +170,7 @@ mod tests {
     #[test]
     fn cuboid_works_with_distinct_sides() {
         let cuboid: Cuboid<i32, 3> = Cuboid {
-            sides: [3, 5, 7],
+            half_edges: [2, 3, 4],
             ..Default::default()
         };
         assert!(cuboid.within([1, 2, 3]));
@@ -250,16 +222,16 @@ mod tests {
     fn returns_distance() {
         let cuboid: Cuboid<f64, 2> = Cuboid::default();
         assert_eq!(0.0, cuboid.distance([0.0, 0.0]));
-        assert_eq!(1.5, cuboid.distance([2.0, 0.0]));
-        assert_eq!(1.5, cuboid.distance([2.0, -0.2]));
-        assert_eq!(1.5, cuboid.distance([0.1, 2.0]));
-        assert_eq!(5.0, cuboid.distance([3.5, 4.5]));
+        assert_eq!(1.0, cuboid.distance([2.0, 0.0]));
+        assert_eq!(1.0, cuboid.distance([2.0, -0.2]));
+        assert_eq!(1.0, cuboid.distance([0.1, 2.0]));
+        assert_eq!(5.0, cuboid.distance([4.0, 5.0]));
     }
 
     #[test]
     fn returns_distance_for_other_sides() {
         let cuboid: Cuboid<i32, 3> = Cuboid {
-            sides: [10, 20, 30],
+            half_edges: [5, 10, 15],
             ..Default::default()
         };
         assert_eq!(0, cuboid.distance([0, 0, 0]));
@@ -269,12 +241,12 @@ mod tests {
 
     #[test]
     fn returns_distance_for_other_center() {
-        let sphere: Cuboid<f64, 2> = Cuboid {
-            center: [3.5, 4.5],
+        let cuboid: Cuboid<f64, 2> = Cuboid {
+            center: [4.0, 5.0],
             ..Default::default()
         };
-        assert_eq!(5.0, sphere.distance([0.0, 0.0]));
-        assert_eq!(0.0, sphere.distance([3.5, 4.5]));
-        assert_eq!(0.5, sphere.distance([4.5, 4.5]));
+        assert_eq!(5.0, cuboid.distance([0.0, 0.0]));
+        assert_eq!(0.0, cuboid.distance([4.0, 5.0]));
+        assert_eq!(1.0, cuboid.distance([5.0, 7.0]));
     }
 }

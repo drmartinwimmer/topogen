@@ -1,538 +1,249 @@
+use crate::traits::Coordinate;
+use std::cmp::Ordering;
+use std::fmt::Display;
+
 #[derive(Clone, Debug)]
-pub enum BoundingBox<T: Clone, const D: usize> {
+pub enum BoundingBox<T: Copy + std::fmt::Debug, const D: usize> {
     Unbounded,
     Empty,
-    Bounded(Bound<T, D>),
-    PartiallyBounded(PartialBound<T, D>),
+    Bounded([DimensionBound<T>; D]),
 }
 
 impl<T, const D: usize> BoundingBox<T, D>
 where
-    T: Clone + Copy,
-    Bound<T, D>: BoundT<D, T = T>,
-    PartialBound<T, D>: BoundT<D, T = T>,
+    T: Coordinate,
 {
+    pub fn new_bounded(b: [DimensionBound<T>; D]) -> Result<Self, Error<T>> {
+        Self::validated(Self::Bounded(b))
+    }
+
+    pub fn new_offset(offset: [T; D], size: [T; D]) -> Self {
+        let mut bounding_box = [DimensionBound::Unbounded; D];
+        for i in 0..D {
+            bounding_box[i] = DimensionBound::Range(offset[i], offset[i] + size[i]);
+        }
+        Self::Bounded(bounding_box)
+    }
+
+    pub fn new_centered(center: [T; D], half_edge: [T; D]) -> Self {
+        let mut bounding_box = [DimensionBound::Unbounded; D];
+        for i in 0..D {
+            bounding_box[i] =
+                DimensionBound::Range(center[i] - half_edge[i], center[i] + half_edge[i]);
+        }
+        Self::Bounded(bounding_box)
+    }
+
+    fn validated(self) -> Result<Self, Error<T>> {
+        match self {
+            BoundingBox::Unbounded => Ok(BoundingBox::Unbounded),
+            BoundingBox::Empty => Ok(BoundingBox::Empty),
+            BoundingBox::Bounded(mut b) => {
+                for bound in b.iter_mut() {
+                    if let DimensionBound::Range(min, max) = bound {
+                        *bound = range(*min, *max)?
+                    }
+                }
+                Ok(
+                    if b.iter().all(|b| matches!(b, DimensionBound::Unbounded)) {
+                        BoundingBox::Unbounded
+                    } else if b.iter().any(|b| matches!(b, DimensionBound::Empty)) {
+                        BoundingBox::Empty
+                    } else {
+                        BoundingBox::Bounded(b)
+                    },
+                )
+            }
+        }
+    }
+
     pub fn within(&self, point: [T; D]) -> bool {
         match self {
             BoundingBox::Unbounded => true,
             BoundingBox::Empty => false,
-            BoundingBox::Bounded(bound) => bound.within(point),
-            BoundingBox::PartiallyBounded(bound) => bound.within(point),
+            BoundingBox::Bounded(bounds) => bounds.iter().zip(point).all(|(b, p)| b.within(p)),
         }
     }
 
-    pub fn for_union(&self, other: &Self) -> Self {
+    pub fn for_union(&self, other: &Self) -> Result<Self, Error<T>> {
         match (self, other) {
-            (BoundingBox::Unbounded, _) | (_, BoundingBox::Unbounded) => BoundingBox::Unbounded,
-            (BoundingBox::Empty, other) | (other, BoundingBox::Empty) => other.clone(),
+            (BoundingBox::Unbounded, _) | (_, BoundingBox::Unbounded) => Ok(BoundingBox::Unbounded),
+            (BoundingBox::Empty, other) | (other, BoundingBox::Empty) => Ok(other.clone()),
             (BoundingBox::Bounded(b1), BoundingBox::Bounded(b2)) => {
-                BoundingBox::Bounded(b1.for_union(b2))
-            }
-            (BoundingBox::PartiallyBounded(b1), BoundingBox::PartiallyBounded(b2)) => {
-                BoundingBox::PartiallyBounded(b1.for_union(b2))
-            }
-            (BoundingBox::Bounded(bounded), BoundingBox::PartiallyBounded(partially_bounded))
-            | (BoundingBox::PartiallyBounded(partially_bounded), BoundingBox::Bounded(bounded)) => {
-                BoundingBox::PartiallyBounded(partially_bounded.for_union(&bounded.into()))
+                let mut union = [DimensionBound::Empty; D];
+                for i in 0..D {
+                    union[i] = b1[i].for_union(b2[i])?;
+                }
+                BoundingBox::new_bounded(union)
             }
         }
     }
 
-    pub fn for_intersection(&self, other: &Self) -> Self {
+    pub fn for_intersect(&self, other: &Self) -> Result<Self, Error<T>> {
         match (self, other) {
-            (BoundingBox::Unbounded, other) | (other, BoundingBox::Unbounded) => other.clone(),
-            (BoundingBox::Empty, _) | (_, BoundingBox::Empty) => BoundingBox::Empty,
-            (BoundingBox::Bounded(b1), BoundingBox::Bounded(b2)) => match b1.for_intersection(b2) {
-                Some(b) => BoundingBox::Bounded(b),
-                None => BoundingBox::Empty,
-            },
-            (BoundingBox::PartiallyBounded(b1), BoundingBox::PartiallyBounded(b2)) => {
-                match b1.for_intersection(b2) {
-                    Some(b) => BoundingBox::PartiallyBounded(b),
-                    None => BoundingBox::Empty,
+            (BoundingBox::Unbounded, other) | (other, BoundingBox::Unbounded) => Ok(other.clone()),
+            (BoundingBox::Empty, _) | (_, BoundingBox::Empty) => Ok(BoundingBox::Empty),
+            (BoundingBox::Bounded(b1), BoundingBox::Bounded(b2)) => {
+                let mut intersect = [DimensionBound::Unbounded; D];
+                for i in 0..D {
+                    intersect[i] = b1[i].for_intersect(b2[i])?;
                 }
+                BoundingBox::new_bounded(intersect)
             }
-            (BoundingBox::Bounded(bounded), BoundingBox::PartiallyBounded(partially_bounded))
-            | (BoundingBox::PartiallyBounded(partially_bounded), BoundingBox::Bounded(bounded)) => {
-                match partially_bounded.for_intersection(&bounded.into()) {
-                    Some(b) => BoundingBox::PartiallyBounded(b),
-                    None => BoundingBox::Empty,
-                }
-            }
-        }
-    }
-
-    pub fn remove_lower_bound(self, dimension: usize) -> Self {
-        match self {
-            BoundingBox::Unbounded => BoundingBox::Unbounded,
-            BoundingBox::Empty => BoundingBox::Empty,
-            BoundingBox::Bounded(bound) => {
-                BoundingBox::PartiallyBounded(bound.remove_lower_bound(dimension))
-            }
-            BoundingBox::PartiallyBounded(bound) => {
-                BoundingBox::PartiallyBounded(bound.remove_lower_bound(dimension))
-            }
-        }
-    }
-
-    pub fn remove_upper_bound(self, dimension: usize) -> Self {
-        match self {
-            BoundingBox::Unbounded => BoundingBox::Unbounded,
-            BoundingBox::Empty => BoundingBox::Empty,
-            BoundingBox::Bounded(bound) => {
-                BoundingBox::PartiallyBounded(bound.remove_upper_bound(dimension))
-            }
-            BoundingBox::PartiallyBounded(bound) => {
-                BoundingBox::PartiallyBounded(bound.remove_upper_bound(dimension))
-            }
-        }
-    }
-
-    pub fn bounds(&self) -> Result<([T; D], [T; D]), Error> {
-        match self {
-            BoundingBox::Unbounded => Err(Error::Unbounded),
-            BoundingBox::Empty => Err(Error::Empty),
-            BoundingBox::Bounded(bound) => Ok(bound.bounds()?),
-            BoundingBox::PartiallyBounded(bound) => Ok(bound.bounds()?),
         }
     }
 }
 
-pub trait BoundT<const D: usize>: Sized {
-    type T;
-
-    fn within(&self, point: [Self::T; D]) -> bool;
-    fn for_union(&self, other: &Self) -> Self;
-    fn for_intersection(&self, other: &Self) -> Option<Self>;
-    fn remove_lower_bound(self, dimension: usize) -> PartialBound<Self::T, D>;
-    fn remove_upper_bound(self, dimension: usize) -> PartialBound<Self::T, D>;
-
-    #[allow(clippy::type_complexity)]
-    fn bounds(&self) -> Result<([Self::T; D], [Self::T; D]), Error>;
+#[derive(Clone, Copy, Debug)]
+pub enum DimensionBound<T> {
+    Empty,
+    Unbounded,
+    Min(T),
+    Max(T),
+    Range(T, T),
 }
 
-#[derive(Clone, Debug)]
-pub struct Bound<T, const D: usize> {
-    min: [T; D],
-    max: [T; D],
-}
-
-macro_rules! impl_bound_boundt {
-    ($t:ty) => {
-        impl<const D: usize> BoundT<D> for Bound<$t, D> {
-            type T = $t;
-
-            fn within(&self, point: [Self::T; D]) -> bool {
-                point
-                    .into_iter()
-                    .zip(self.min.iter().zip(self.max.iter()))
-                    .all(|(p, (min, max))| p >= *min && p < *max)
-            }
-
-            fn for_union(&self, other: &Self) -> Self {
-                let (mut min, mut max) = (self.min.clone(), self.max.clone());
-                for i in 0..D {
-                    min[i] = min[i].min(other.min[i]);
-                    max[i] = max[i].max(other.max[i]);
-                }
-                Self { min, max }
-            }
-
-            fn for_intersection(&self, other: &Self) -> Option<Self> {
-                let (mut min, mut max) = (self.min.clone(), self.max.clone());
-                for i in 0..D {
-                    min[i] = min[i].max(other.min[i]);
-                    max[i] = max[i].min(other.max[i]);
-                }
-                if min
-                    .into_iter()
-                    .zip(max.into_iter())
-                    .all(|(min, max)| min < max)
-                {
-                    Some(Self { min, max })
-                } else {
-                    None
-                }
-            }
-
-            fn remove_lower_bound(self, dimension: usize) -> PartialBound<Self::T, D> {
-                let partial_bound: PartialBound<Self::T, D> = self.into();
-                partial_bound.remove_lower_bound(dimension)
-            }
-
-            fn remove_upper_bound(self, dimension: usize) -> PartialBound<Self::T, D> {
-                let partial_bound: PartialBound<Self::T, D> = self.into();
-                partial_bound.remove_upper_bound(dimension)
-            }
-
-            fn bounds(&self) -> Result<([Self::T; D], [Self::T; D]), Error> {
-                Ok((self.min.clone(), self.max.clone()))
-            }
-        }
-    };
-}
-
-macro_rules! impl_bound_float {
-    ($t:ty) => {
-        impl<const D: usize> Bound<$t, D> {
-            pub fn new(mut offset: [$t; D], mut size: [$t; D]) -> Self {
-                for i in 0..D {
-                    if size[i] < 0 as $t {
-                        offset[i] -= size[i];
-                        size[i] = -size[i];
-                    }
-                }
-                let (min, mut max) = (offset, size);
-                for i in 0..D {
-                    max[i] += offset[i];
-                }
-                Self { min, max }
-            }
-
-            pub fn new_centered(center: [$t; D], mut size: [$t; D]) -> Self {
-                size.iter_mut().for_each(|s| *s = s.abs());
-                let (mut min, mut max) = (center, size);
-                for i in 0..D {
-                    min[i] -= max[i] / 2.0;
-                    max[i] += min[i];
-                }
-                Self { min, max }
-            }
-        }
-    };
-}
-
-macro_rules! impl_bound_int {
-    ($t:ty) => {
-        impl<const D: usize> Bound<$t, D> {
-            pub fn new(mut offset: [$t; D], mut size: [$t; D]) -> Self {
-                for i in 0..D {
-                    if size[i] < 0 as $t {
-                        offset[i] -= size[i];
-                        size[i] = -size[i];
-                    }
-                }
-                let (min, mut max) = (offset, size);
-                for i in 0..D {
-                    max[i] += offset[i];
-                }
-                Self { min, max }
-            }
-
-            pub fn new_centered(center: [$t; D], mut size: [$t; D]) -> Self {
-                size.iter_mut().for_each(|s| {
-                    *s = s.abs();
-                    // Round up if uneven
-                    *s += *s % 2;
-                });
-                let (mut min, mut max) = (center, size);
-                for i in 0..D {
-                    min[i] -= max[i] / 2;
-                    max[i] += min[i];
-                }
-                Self { min, max }
-            }
-        }
-    };
-}
-
-macro_rules! impl_bound_uint {
-    ($t:ty) => {
-        impl<const D: usize> Bound<$t, D> {
-            pub fn new(offset: [$t; D], size: [$t; D]) -> Self {
-                let (min, mut max) = (offset, size);
-                for i in 0..D {
-                    max[i] += offset[i];
-                }
-                Self { min, max }
-            }
-
-            pub fn new_centered(center: [$t; D], mut size: [$t; D]) -> Self {
-                size.iter_mut().for_each(|s| {
-                    // Round up if uneven
-                    *s += *s % 2;
-                });
-                let (mut min, mut max) = (center, size);
-                for i in 0..D {
-                    min[i] -= max[i] / 2;
-                    max[i] += min[i];
-                }
-                Self { min, max }
-            }
-        }
-    };
-}
-
-macro_rules! impl_bound_float_all {
-    ($($t:ty),+) => {$(
-        impl_bound_boundt!($t);
-        impl_bound_float!($t);
-    )+};
-}
-
-macro_rules! impl_bound_int_all {
-    ($($t:ty),+) => {$(
-        impl_bound_boundt!($t);
-        impl_bound_int!($t);
-    )+};
-}
-
-macro_rules! impl_bound_uint_all {
-    ($($t:ty),+) => {$(
-        impl_bound_boundt!($t);
-        impl_bound_uint!($t);
-    )+};
-}
-
-impl_bound_float_all!(f32, f64);
-impl_bound_int_all!(i8, i16, i32, i64, i128, isize);
-impl_bound_uint_all!(u8, u16, u32, u64, u128, usize);
-
-#[derive(Clone, Debug)]
-pub struct PartialBound<T, const D: usize> {
-    min: [Option<T>; D],
-    max: [Option<T>; D],
-}
-
-impl<T: Copy, const D: usize> From<Bound<T, D>> for PartialBound<T, D> {
-    fn from(value: Bound<T, D>) -> Self {
-        let (mut min, mut max) = ([None; D], [None; D]);
-        for i in 0..D {
-            min[i] = Some(value.min[i]);
-            max[i] = Some(value.max[i]);
-        }
-        Self { min, max }
+impl<T> Default for DimensionBound<T> {
+    fn default() -> Self {
+        Self::Empty
     }
 }
 
-impl<T: Copy, const D: usize> From<&Bound<T, D>> for PartialBound<T, D> {
-    fn from(value: &Bound<T, D>) -> Self {
-        let (mut min, mut max) = ([None; D], [None; D]);
-        for i in 0..D {
-            min[i] = Some(value.min[i]);
-            max[i] = Some(value.max[i]);
-        }
-        Self { min, max }
-    }
-}
-
-impl<T, const D: usize> TryFrom<PartialBound<T, D>> for Bound<T, D>
+fn min<T>(a: T, b: T) -> Result<T, Error<T>>
 where
-    [T; D]: Default,
-    T: Clone + Copy,
+    T: Coordinate,
 {
-    type Error = Error;
-
-    fn try_from(value: PartialBound<T, D>) -> Result<Self, Error> {
-        let (mut new_min, mut new_max) = (<[T; D]>::default(), <[T; D]>::default());
-        for i in 0..D {
-            match (&value.min[i], &value.max[i]) {
-                (Some(min), Some(max)) => {
-                    new_min[i] = *min;
-                    new_max[i] = *max;
-                }
-                _ => return Err(Error::Unbounded),
-            }
-        }
-        Ok(Self {
-            min: new_min,
-            max: new_max,
-        })
+    match a.partial_cmp(&b) {
+        Some(Ordering::Less) | Some(Ordering::Equal) => Ok(a),
+        Some(Ordering::Greater) => Ok(b),
+        None => Err(Error::PartialCmpFailed(a, b)),
     }
 }
 
-impl<T, const D: usize> TryFrom<&PartialBound<T, D>> for Bound<T, D>
+fn max<T>(a: T, b: T) -> Result<T, Error<T>>
 where
-    T: Default + Clone + Copy,
+    T: Coordinate,
 {
-    type Error = Error;
-
-    fn try_from(value: &PartialBound<T, D>) -> Result<Self, Error> {
-        let (mut new_min, mut new_max) = ([<T>::default(); D], [<T>::default(); D]);
-        for i in 0..D {
-            match (&value.min[i], &value.max[i]) {
-                (Some(min), Some(max)) => {
-                    new_min[i] = *min;
-                    new_max[i] = *max;
-                }
-                _ => return Err(Error::Unbounded),
-            }
-        }
-        Ok(Self {
-            min: new_min,
-            max: new_max,
-        })
+    match a.partial_cmp(&b) {
+        Some(Ordering::Greater) | Some(Ordering::Equal) => Ok(a),
+        Some(Ordering::Less) => Ok(b),
+        None => Err(Error::PartialCmpFailed(a, b)),
     }
 }
 
-macro_rules! impl_partial_bound {
-    ($t:ty) => {
-        impl<const D: usize> BoundT<D> for PartialBound<$t, D> {
-            type T = $t;
-
-            fn within(&self, point: [Self::T; D]) -> bool {
-                point
-                    .into_iter()
-                    .zip(self.min.iter().zip(self.max.iter()))
-                    .all(|(p, (min, max))| match (*min, *max) {
-                        (Some(min), Some(max)) => p >= min && p < max,
-                        (Some(min), None) => p >= min,
-                        (None, Some(max)) => p < max,
-                        (None, None) => true,
-                    })
-            }
-
-            fn for_union(&self, other: &Self) -> Self {
-                let (mut min, mut max) = ([None; D], [None; D]);
-                for i in 0..D {
-                    min[i] = match (self.min[i], other.min[i]) {
-                        (None, _) | (_, None) => None,
-                        (Some(m1), Some(m2)) => Some(m1.min(m2)),
-                    };
-                    max[i] = match (self.max[i], other.max[i]) {
-                        (None, _) | (_, None) => None,
-                        (Some(m1), Some(m2)) => Some(m1.max(m2)),
-                    };
-                }
-                Self { min, max }
-            }
-
-            fn for_intersection(&self, other: &Self) -> Option<Self> {
-                let (mut min, mut max) = ([None; D], [None; D]);
-                for i in 0..D {
-                    min[i] = match (self.min[i], other.min[i]) {
-                        (Some(m1), Some(m2)) => Some(m1.max(m2)),
-                        (None, m) | (m, None) => m,
-                    };
-                    max[i] = match (self.max[i], other.max[i]) {
-                        (Some(m1), Some(m2)) => Some(m1.min(m2)),
-                        (None, m) | (m, None) => m,
-                    };
-                }
-                if min
-                    .into_iter()
-                    .zip(max.into_iter())
-                    .filter_map(|m| match m {
-                        (Some(min), Some(max)) => Some((min, max)),
-                        _ => None,
-                    })
-                    .all(|(min, max)| min < max)
-                {
-                    Some(Self { min, max })
-                } else {
-                    None
-                }
-            }
-
-            fn remove_lower_bound(mut self, dimension: usize) -> Self {
-                self.min[dimension] = None;
-                self
-            }
-
-            fn remove_upper_bound(mut self, dimension: usize) -> Self {
-                self.max[dimension] = None;
-                self
-            }
-
-            fn bounds(&self) -> Result<([Self::T; D], [Self::T; D]), Error> {
-                let bound = Bound::<$t, D>::try_from(self)?;
-                bound.bounds()
-            }
-        }
-
-        impl<const D: usize> PartialBound<$t, D> {
-            pub fn is_unbounded(&self) -> bool {
-                self.min
-                    .into_iter()
-                    .zip(self.max.into_iter())
-                    .all(|(min, max)| min == None && max == None)
-            }
-        }
-    };
+fn range<T>(min: T, max: T) -> Result<DimensionBound<T>, Error<T>>
+where
+    T: Coordinate,
+{
+    match min.partial_cmp(&max) {
+        Some(Ordering::Less) => Ok(DimensionBound::Range(min, max)),
+        Some(Ordering::Greater) | Some(Ordering::Equal) => Ok(DimensionBound::Empty),
+        None => Err(Error::PartialCmpFailed(min, max)),
+    }
 }
 
-macro_rules! impl_partial_bound_all {
-    ($($t:ty),+) => {$(
-        impl_partial_bound!($t);
-    )+};
-}
+impl<T> DimensionBound<T>
+where
+    T: Coordinate,
+{
+    fn within(&self, point: T) -> bool {
+        match self {
+            DimensionBound::Empty => false,
+            DimensionBound::Unbounded => true,
+            DimensionBound::Min(min) => point > *min,
+            DimensionBound::Max(max) => point < *max,
+            DimensionBound::Range(min, max) => point > *min && point < *max,
+        }
+    }
 
-impl_partial_bound_all!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize, f32, f64);
+    fn for_union(self, other: Self) -> Result<Self, Error<T>> {
+        match (self, other) {
+            (DimensionBound::Empty, other) | (other, DimensionBound::Empty) => Ok(other),
+            (DimensionBound::Unbounded, _)
+            | (_, DimensionBound::Unbounded)
+            | (DimensionBound::Min(_), DimensionBound::Max(_))
+            | (DimensionBound::Max(_), DimensionBound::Min(_)) => Ok(DimensionBound::Unbounded),
+            (DimensionBound::Min(min1), DimensionBound::Min(min2))
+            | (DimensionBound::Min(min1), DimensionBound::Range(min2, _))
+            | (DimensionBound::Range(min1, _), DimensionBound::Min(min2)) => {
+                Ok(DimensionBound::Min(min(min1, min2)?))
+            }
+            (DimensionBound::Max(max1), DimensionBound::Max(max2))
+            | (DimensionBound::Max(max1), DimensionBound::Range(_, max2))
+            | (DimensionBound::Range(_, max1), DimensionBound::Max(max2)) => {
+                Ok(DimensionBound::Max(max(max1, max2)?))
+            }
+            (DimensionBound::Range(min1, max1), DimensionBound::Range(min2, max2)) => {
+                range(min(min1, min2)?, max(max1, max2)?)
+            }
+        }
+    }
+
+    fn for_intersect(self, other: Self) -> Result<Self, Error<T>> {
+        match (self, other) {
+            (DimensionBound::Empty, _) | (_, DimensionBound::Empty) => Ok(DimensionBound::Empty),
+            (DimensionBound::Unbounded, other) | (other, DimensionBound::Unbounded) => Ok(other),
+            (DimensionBound::Min(min1), DimensionBound::Min(min2)) => {
+                Ok(DimensionBound::Min(max(min1, min2)?))
+            }
+            (DimensionBound::Max(max1), DimensionBound::Max(max2)) => {
+                Ok(DimensionBound::Max(min(max1, max2)?))
+            }
+            (DimensionBound::Min(min), DimensionBound::Max(max))
+            | (DimensionBound::Max(max), DimensionBound::Min(min)) => range(min, max),
+            (DimensionBound::Min(min1), DimensionBound::Range(min2, max1))
+            | (DimensionBound::Range(min1, max1), DimensionBound::Min(min2)) => {
+                range(max(min1, min2)?, max1)
+            }
+            (DimensionBound::Max(max1), DimensionBound::Range(min1, max2))
+            | (DimensionBound::Range(min1, max1), DimensionBound::Max(max2)) => {
+                range(min1, min(max1, max2)?)
+            }
+            (DimensionBound::Range(min1, max1), DimensionBound::Range(min2, max2)) => {
+                range(max(min1, min2)?, min(max1, max2)?)
+            }
+        }
+    }
+}
 
 #[derive(thiserror::Error, Debug)]
-pub enum Error {
-    #[error("An unbounded bound was used in an operation that requires a bound")]
-    Unbounded,
-    #[error("An empty bound was used in an operation that requires a bound")]
-    Empty,
+pub enum Error<T: Display> {
+    #[error("Partial comparison failed: {0}, {1}")]
+    PartialCmpFailed(T, T),
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Bound, BoundT, BoundingBox, Error, PartialBound};
+    use super::BoundingBox;
 
     #[test]
     fn new_bound_works() {
-        let bound = Bound::<i32, 2>::new([15, 15], [10, 10]);
-        assert!(bound.within([15, 15]));
+        let bound = BoundingBox::new_offset([15, 15], [10, 10]);
+        assert!(bound.within([16, 16]));
         assert!(bound.within([24, 24]));
-        assert!(!bound.within([25, 15]));
+        assert!(!bound.within([25, 16]));
         assert!(!bound.within([15, 25]));
-        assert!(!bound.within([14, 15]));
+        assert!(!bound.within([15, 16]));
     }
 
     #[test]
-    fn partial_bound_works() {
-        let partial_bound: PartialBound<i32, 2> = Bound::<i32, 2>::new([15, 15], [10, 10]).into();
-        assert!(partial_bound.within([15, 15]));
-        assert!(!partial_bound.within([25, 15]));
-    }
-
-    #[test]
-    fn try_from_partial_bound_works() {
-        let partial_bound: PartialBound<i32, 2> = Bound::<i32, 2>::new([15, 15], [10, 10]).into();
-        let _: Bound<i32, 2> = partial_bound.try_into().unwrap();
-    }
-
-    #[test]
-    fn try_from_partial_bound_fails_on_unbounded() {
-        let partial_bound: PartialBound<i32, 2> = Bound::<i32, 2>::new([15, 15], [10, 10]).into();
-        let partial_bound = partial_bound.remove_lower_bound(0);
-        assert!(matches!(
-            Bound::<i32, 2>::try_from(&partial_bound),
-            Err(Error::Unbounded)
-        ));
-    }
-
-    #[test]
-    fn for_union_works_for_bounds() {
-        let bound = Bound::<i32, 2>::new([15, 15], [10, 10]);
-        let bound2 = Bound::<i32, 2>::new([10, 10], [10, 10]);
-        let union = bound.for_union(&bound2);
-        assert!(union.within([10, 10]));
+    fn for_union_works() {
+        let bound = BoundingBox::new_offset([15, 15], [10, 10]);
+        let bound2 = BoundingBox::new_offset([10, 10], [10, 10]);
+        let union = bound.for_union(&bound2).unwrap();
+        assert!(union.within([11, 11]));
         assert!(union.within([24, 24]));
         assert!(!union.within([25, 15]));
-        assert!(!union.within([9, 15]));
+        assert!(!union.within([10, 15]));
     }
 
     #[test]
-    fn for_union_works_for_partial_bounds() {
-        let bound: PartialBound<i32, 2> = Bound::<i32, 2>::new([15, 15], [10, 10]).into();
-        let bound2: PartialBound<i32, 2> = Bound::<i32, 2>::new([10, 10], [10, 10]).into();
-        let union = bound.for_union(&bound2);
-        assert!(union.within([10, 10]));
-        assert!(union.within([24, 24]));
-        assert!(!union.within([25, 15]));
-        assert!(!union.within([9, 15]));
-    }
-
-    #[test]
-    fn bounding_box_intersection_works() {
-        let bound = BoundingBox::Bounded(Bound::<i32, 2>::new([15, 15], [10, 10]));
-        let bound2 = BoundingBox::Bounded(Bound::<i32, 2>::new([10, 10], [10, 10]));
-        let inter = bound.for_intersection(&bound2);
-        assert!(!inter.within([10, 10]));
-        assert!(inter.within([15, 15]));
+    fn for_intersection_works() {
+        let bound = BoundingBox::new_offset([15, 15], [10, 10]);
+        let bound2 = BoundingBox::new_offset([10, 10], [10, 10]);
+        let inter = bound.for_intersect(&bound2).unwrap();
+        assert!(!inter.within([11, 11]));
+        assert!(inter.within([16, 16]));
         assert!(!inter.within([20, 19]));
     }
 }
