@@ -1,4 +1,3 @@
-use super::{Union, UnionError};
 use crate::{
     shapes::BoundingBox,
     traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
@@ -41,18 +40,8 @@ where
     G: Bounded<T, D>,
     F: Clone,
 {
-    type Bitmap = G::Bitmap;
-
     fn within(&self, input: [T; D]) -> bool {
         self.generator.within(input)
-    }
-
-    fn union<R>(self, other: Vec<Self>, reducer: R) -> Result<Union<Self, R, T, D>, UnionError<T>> {
-        Union::new(other, reducer)
-    }
-
-    fn bitmap(self) -> Self::Bitmap {
-        self.generator.bitmap()
     }
 
     fn bounding_box(&self) -> BoundingBox<T, D> {

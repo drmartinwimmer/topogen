@@ -1,4 +1,3 @@
-use crate::ops::{Bitmap, Union, UnionError};
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 use std::cmp::Ordering;
 use std::fmt::Display;
@@ -241,27 +240,12 @@ where
     B: Bounded<T, D>,
     T: Coordinate,
 {
-    type Bitmap = Bitmap<Self, T, D>;
-
     fn bounding_box(&self) -> BoundingBox<T, D> {
         self.bounding_box.clone()
     }
 
     fn within(&self, point: [T; D]) -> bool {
         self.bounding_box.within(point) && self.bounded.within(point)
-    }
-
-    fn union<F>(
-        self,
-        mut others: Vec<Self>,
-        reducer: F,
-    ) -> Result<Union<Self, F, T, D>, UnionError<T>> {
-        others.push(self);
-        Union::new(others, reducer)
-    }
-
-    fn bitmap(self) -> Self::Bitmap {
-        Bitmap::new(self)
     }
 }
 

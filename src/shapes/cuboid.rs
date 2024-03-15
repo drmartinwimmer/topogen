@@ -1,4 +1,3 @@
-use crate::ops::{Bitmap, Union, UnionError};
 use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Shape};
 
@@ -20,26 +19,11 @@ impl<T, const D: usize> Bounded<T, D> for Cuboid<T, D>
 where
     T: Coordinate,
 {
-    type Bitmap = Bitmap<Self, T, D>;
-
-    fn bitmap(self) -> Self::Bitmap {
-        Bitmap::new(self)
-    }
-
     fn within(&self, point: [T; D]) -> bool {
         point
             .into_iter()
             .zip(self.half_edges.iter().zip(self.center.iter()))
             .all(|(p, (e, c))| p > *c - *e && p < *c + *e)
-    }
-
-    fn union<F>(
-        self,
-        mut other: Vec<Self>,
-        reducer: F,
-    ) -> Result<Union<Self, F, T, D>, UnionError<T>> {
-        other.push(self);
-        Union::new(other, reducer)
     }
 
     fn bounding_box(&self) -> BoundingBox<T, D> {

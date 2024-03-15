@@ -1,8 +1,6 @@
 use crate::traits::{Bounded, Coordinate, Euclidean, Generator};
 use std::marker::PhantomData;
 
-use super::{Union, UnionError};
-
 #[derive(Debug)]
 pub struct Bitmap<G, T, const D: usize> {
     i: PhantomData<[T; D]>,
@@ -37,19 +35,8 @@ where
     T: Coordinate,
     G: Bounded<T, D>,
 {
-    type Bitmap = Self;
-
     fn within(&self, input: [T; D]) -> bool {
         self.generator.within(input)
-    }
-
-    fn union<F>(
-        self,
-        mut others: Vec<Self>,
-        reducer: F,
-    ) -> Result<Union<Self, F, T, D>, UnionError<T>> {
-        others.push(self);
-        Union::new(others, reducer)
     }
 
     // fn intersect(self, other: Self) -> Self {
@@ -59,10 +46,6 @@ where
     // fn sub(self, other: Self) -> Self {
     //     self.generator.sub(other.generator).bitmap()
     // }
-
-    fn bitmap(self) -> Self::Bitmap {
-        self
-    }
 
     fn bounding_box(&self) -> crate::shapes::BoundingBox<T, D> {
         self.generator.bounding_box()

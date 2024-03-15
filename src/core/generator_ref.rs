@@ -1,5 +1,5 @@
 use crate::{
-    ops::{Bitmap, Union, UnionError},
+    ops::{Union, UnionError},
     traits::{Bounded, Coordinate, Euclidean, Generator},
 };
 
@@ -32,8 +32,6 @@ where
     T: Coordinate,
     G: Bounded<T, D>,
 {
-    type Bitmap = Bitmap<Self, T, D>;
-
     fn within(&self, input: [T; D]) -> bool {
         self.generator.within(input)
     }
@@ -49,9 +47,5 @@ where
 
     fn bounding_box(&self) -> crate::shapes::BoundingBox<T, D> {
         self.generator.bounding_box()
-    }
-
-    fn bitmap(self) -> Self::Bitmap {
-        Bitmap::new(self)
     }
 }

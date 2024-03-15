@@ -1,4 +1,3 @@
-use crate::ops::{Bitmap, Union, UnionError};
 use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Shape};
 
@@ -20,8 +19,6 @@ impl<T, const D: usize> Bounded<T, D> for Sphere<T, D>
 where
     T: Coordinate,
 {
-    type Bitmap = Bitmap<Self, T, D>;
-
     fn within(&self, point: [T; D]) -> bool {
         let radius: T = point
             .into_iter()
@@ -33,19 +30,6 @@ where
 
     fn bounding_box(&self) -> BoundingBox<T, D> {
         BoundingBox::new_centered(self.center, [self.radius; D])
-    }
-
-    fn bitmap(self) -> Self::Bitmap {
-        Bitmap::new(self)
-    }
-
-    fn union<F>(
-        self,
-        mut other: Vec<Self>,
-        reducer: F,
-    ) -> Result<Union<Self, F, T, D>, UnionError<T>> {
-        other.push(self);
-        Union::new(other, reducer)
     }
 }
 
