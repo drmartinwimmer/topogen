@@ -47,7 +47,7 @@ where
         self.generator.within(input)
     }
 
-    fn union<R>(self, other: Vec<Self>, reducer: R) -> Result<Union<T, Self, R, D>, UnionError<T>> {
+    fn union<R>(self, other: Vec<Self>, reducer: R) -> Result<Union<Self, R, T, D>, UnionError<T>> {
         Union::new(other, reducer)
     }
 

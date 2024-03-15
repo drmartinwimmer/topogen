@@ -4,7 +4,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Union<T, G, F, const D: usize>
+pub struct Union<G, F, T, const D: usize>
 where
     T: Coordinate,
     G: Bounded<T, D>,
@@ -14,7 +14,7 @@ where
     reducer: F,
 }
 
-impl<T, G, F, const D: usize> Union<T, G, F, D>
+impl<T, G, F, const D: usize> Union<G, F, T, D>
 where
     T: Coordinate,
     G: Bounded<T, D>,
@@ -32,23 +32,25 @@ where
     }
 }
 
-impl<T, G, F, const D: usize> Generator<[T; D]> for Union<T, G, F, D>
+impl<T, G, F, const D: usize> Generator<[T; D]> for Union<G, F, T, D>
 where
     T: Coordinate,
     G: Bounded<T, D> + Generator<[T; D]>,
+    G::Output: Default,
     F: Fn(G::Output, G::Output) -> G::Output + Clone,
 {
-    type Output = Option<G::Output>;
+    type Output = G::Output;
 
     fn generate(&self, input: [T; D]) -> Self::Output {
         if !self.bounding_box.within(input) {
-            return None;
+            return Self::Output::default();
         }
         self.elements
             .iter()
             .filter(|e| e.within(input))
             .map(|e| e.generate(input))
             .reduce(&self.reducer)
+            .unwrap_or_default()
     }
 }
 

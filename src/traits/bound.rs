@@ -12,7 +12,7 @@ where
 
     fn within(&self, input: [T; D]) -> bool;
     fn union<F>(self, others: Vec<Self>, reducer: F)
-        -> Result<Union<T, Self, F, D>, UnionError<T>>;
+        -> Result<Union<Self, F, T, D>, UnionError<T>>;
     //fn intersect(self, other: Vec<Self>) -> Self;
 
     fn bounding_box(&self) -> BoundingBox<T, D>;

@@ -255,7 +255,7 @@ where
         self,
         mut others: Vec<Self>,
         reducer: F,
-    ) -> Result<Union<T, Self, F, D>, UnionError<T>> {
+    ) -> Result<Union<Self, F, T, D>, UnionError<T>> {
         others.push(self);
         Union::new(others, reducer)
     }
