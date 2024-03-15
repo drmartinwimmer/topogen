@@ -47,7 +47,7 @@ where
         Union::new(other, reducer)
     }
 
-    fn bounding_box(&self) -> crate::geometry::object::BoundingBox<T, D> {
+    fn bounding_box(&self) -> crate::shapes::BoundingBox<T, D> {
         self.generator.bounding_box()
     }
 

@@ -1,6 +1,6 @@
-use crate::geometry::{object::BoundingBox, GeometricObject};
 use crate::ops::{Bitmap, Union, UnionError};
-use crate::traits::{Bounded, Center, Coordinate, Euclidean};
+use crate::shapes::BoundingBox;
+use crate::traits::{Bounded, Center, Coordinate, Euclidean, Shape};
 
 #[derive(Debug, Clone)]
 pub struct Cuboid<T, const D: usize> {
@@ -59,49 +59,42 @@ where
     }
 }
 
-macro_rules! impl_geometric_object {
-    ($t:ty, $sqrtt:ty) => {
-        impl<const D: usize> GeometricObject<$t, D> for Cuboid<$t, D> {
-            fn distance(&self, point: [$t; D]) -> $t {
-                let mut closest_point = point.clone();
-                closest_point
-                    .iter_mut()
-                    .zip(self.half_edges.iter().zip(self.center.iter()))
-                    .for_each(|(p, (e, c))| {
-                        let (left, right) = (*c - *e, *c + *e);
-                        *p = if *p < left {
-                            left
-                        } else if *p > right {
-                            right
-                        } else {
-                            *p
-                        }
-                    });
+impl<T, const D: usize> Shape<T, D> for Cuboid<T, D>
+where
+    T: Coordinate,
+{
+    fn distance(&self, point: [T; D]) -> T
+    where
+        T: num_traits::Float,
+    {
+        let mut closest_point = point;
+        closest_point
+            .iter_mut()
+            .zip(self.half_edges.iter().zip(self.center.iter()))
+            .for_each(|(p, (e, c))| {
+                let (left, right) = (*c - *e, *c + *e);
+                *p = if *p < left {
+                    left
+                } else if *p > right {
+                    right
+                } else {
+                    *p
+                }
+            });
 
-                let distance: $t = point
-                    .into_iter()
-                    .zip(closest_point.iter())
-                    .map(|(p, c)| (p - c) * (p - c))
-                    .sum();
-                (distance as $sqrtt).sqrt() as $t
-            }
-        }
-    };
+        let distance: T = point
+            .into_iter()
+            .zip(closest_point.iter())
+            .map(|(p, c)| (p - *c) * (p - *c))
+            .sum();
+        distance.sqrt()
+    }
 }
-
-macro_rules! impl_cuboid_float {
-    ($($t:ty),+) => {$(
-        impl_geometric_object!($t, $t);
-    )+};
-}
-
-impl_cuboid_float!(f32, f64);
 
 #[cfg(test)]
 mod tests {
     use super::Cuboid;
-    use crate::geometry::GeometricObject;
-    use crate::traits::{Bounded, Center, Generator};
+    use crate::traits::{Bounded, Center, Generator, Shape};
 
     #[test]
     fn generates_cuboid() {

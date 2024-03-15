@@ -1,5 +1,8 @@
 use super::{Union, UnionError};
-use crate::traits::{Bounded, Coordinate, Euclidean, Generator};
+use crate::{
+    shapes::BoundingBox,
+    traits::{Bounded, Coordinate, Euclidean, Generator},
+};
 
 #[derive(Debug)]
 pub struct Map<G, F> {
@@ -52,7 +55,7 @@ where
         self.generator.bitmap()
     }
 
-    fn bounding_box(&self) -> crate::geometry::object::BoundingBox<T, D> {
+    fn bounding_box(&self) -> BoundingBox<T, D> {
         self.generator.bounding_box()
     }
 }

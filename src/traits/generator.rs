@@ -30,7 +30,7 @@ pub trait Generator<I>: Sized {
 #[cfg(test)]
 mod tests {
     use super::Generator;
-    use crate::{geometry::object::Sphere, traits::Bounded};
+    use crate::{shapes::Sphere, traits::Bounded};
 
     #[test]
     fn map_works() {

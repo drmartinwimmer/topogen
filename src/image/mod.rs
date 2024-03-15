@@ -3,7 +3,7 @@ pub mod palette;
 
 use num_traits::AsPrimitive;
 
-use crate::geometry::object::{BoundingBox, DimensionBound};
+use crate::shapes::{BoundingBox, DimensionBound};
 use crate::traits::{Bounded, Coordinate, Generator};
 use std::fmt::Display;
 
@@ -96,7 +96,7 @@ pub enum Error<T: Display> {
     #[error("Image Error {0:?}")]
     ImageError(#[from] image::ImageError),
     #[error("Computing bounds failed")]
-    BoundingBoxError(#[from] crate::geometry::object::bounding_box::Error<T>),
+    BoundingBoxError(#[from] crate::shapes::BoundingBoxError<T>),
     #[error("Bounding box is empty")]
     EmptyBoundingBox,
     #[error("Bounding box is unbounded in at least one direction")]
@@ -109,7 +109,7 @@ mod tests {
 
     use super::Image;
     use crate::{
-        geometry::object::Cuboid,
+        shapes::Cuboid,
         traits::{Bounded, Generator},
     };
 

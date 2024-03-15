@@ -1,6 +1,6 @@
-use crate::geometry::{object::BoundingBox, GeometricObject};
 use crate::ops::{Bitmap, Union, UnionError};
-use crate::traits::{Bounded, Center, Coordinate, Euclidean};
+use crate::shapes::BoundingBox;
+use crate::traits::{Bounded, Center, Coordinate, Euclidean, Shape};
 
 #[derive(Debug, Clone)]
 pub struct Sphere<T, const D: usize> {
@@ -49,14 +49,16 @@ where
     }
 }
 
-macro_rules! impl_geometric_object {
-    ($t:ty) => {
-        impl<const D: usize> GeometricObject<$t, D> for Sphere<$t, D> {
-            fn distance(&self, point: [$t; D]) -> $t {
-                <$t>::max(self.center_distance(point) - self.radius, 0 as $t)
-            }
-        }
-    };
+impl<T, const D: usize> Shape<T, D> for Sphere<T, D>
+where
+    T: Coordinate,
+{
+    fn distance(&self, point: [T; D]) -> T
+    where
+        T: num_traits::Zero + num_traits::Float,
+    {
+        T::max(self.center_distance(point) - self.radius, T::zero())
+    }
 }
 
 impl<T, const D: usize> Default for Sphere<T, D>
@@ -71,19 +73,10 @@ where
     }
 }
 
-macro_rules! impl_sphere_float {
-    ($($t:ty),+) => {$(
-        impl_geometric_object!($t);
-    )+};
-}
-
-impl_sphere_float!(f32, f64);
-
 #[cfg(test)]
 mod tests {
     use super::Sphere;
-    use crate::geometry::GeometricObject;
-    use crate::traits::{Bounded, Center, Generator};
+    use crate::traits::{Bounded, Center, Generator, Shape};
 
     #[test]
     fn generates_sphere() {

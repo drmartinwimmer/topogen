@@ -2,8 +2,8 @@ extern crate generative_map;
 extern crate image;
 
 use generative_map::{
-    geometry::object::Sphere,
     image::Image,
+    shapes::Sphere,
     traits::{Bounded, Generator},
 };
 

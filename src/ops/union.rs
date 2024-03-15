@@ -1,5 +1,5 @@
 use crate::{
-    geometry::object::{bounding_box, BoundingBox},
+    shapes::{BoundingBox, BoundingBoxError},
     traits::{Bounded, Coordinate, Generator},
 };
 
@@ -55,5 +55,5 @@ where
 #[derive(thiserror::Error, Debug)]
 pub enum Error<T: std::fmt::Display> {
     #[error("Bounding box operation failed: {0:?}")]
-    UpperBoundFailed(#[from] bounding_box::Error<T>),
+    UpperBoundFailed(#[from] BoundingBoxError<T>),
 }
