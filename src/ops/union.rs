@@ -1,6 +1,6 @@
 use crate::{
     shapes::{BoundingBox, BoundingBoxError},
-    traits::{Bounded, Coordinate, Generator},
+    traits::{Bounded, Coordinate, Euclidean, Generator, Shape},
 };
 
 #[derive(Debug)]
@@ -51,6 +51,44 @@ where
             .map(|e| e.generate(input))
             .reduce(&self.reducer)
             .unwrap_or_default()
+    }
+}
+
+impl<G, F, T, const D: usize> Euclidean<T, D> for Union<G, F, T, D>
+where
+    T: Coordinate,
+    G: Bounded<T, D>,
+{
+}
+
+impl<G, F, T, const D: usize> Bounded<T, D> for Union<G, F, T, D>
+where
+    T: Coordinate,
+    G: Bounded<T, D>,
+{
+    fn within(&self, input: [T; D]) -> bool {
+        self.bounding_box.within(input) && self.elements.iter().all(|e| e.within(input))
+    }
+
+    fn bounding_box(&self) -> BoundingBox<T, D> {
+        self.bounding_box.clone()
+    }
+}
+
+impl<G, F, T, const D: usize> Shape<T, D> for Union<G, F, T, D>
+where
+    T: Coordinate,
+    G: Shape<T, D>,
+{
+    fn distance(&self, point: [T; D]) -> T
+    where
+        T: num_traits::Float,
+    {
+        self.elements
+            .iter()
+            .map(|e| e.distance(point))
+            .reduce(|a, b| a.min(b))
+            .unwrap_or(T::infinity())
     }
 }
 

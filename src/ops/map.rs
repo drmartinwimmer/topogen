@@ -98,6 +98,13 @@ where
     }
 }
 
+impl<G, F, T, const D: usize> Euclidean<T, D> for MapInput<G, F>
+where
+    T: Coordinate,
+    G: Euclidean<T, D>,
+{
+}
+
 #[cfg(test)]
 mod tests {
     use crate::core::Constant;
