@@ -28,7 +28,7 @@ where
     }
 }
 
-impl<T: Coordinate, G, const D: usize> Euclidean<T, D> for Bitmap<G, T, D> {}
+impl<T: Coordinate, G, const D: usize> Euclidean<T, D> for Bitmap<G, T, D> where G: Bounded<T, D> {}
 
 impl<T, G, const D: usize> Bounded<T, D> for Bitmap<G, T, D>
 where
