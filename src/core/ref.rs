@@ -1,7 +1,4 @@
-use crate::{
-    ops::{Union, UnionError},
-    traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
-};
+use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 
 #[derive(Clone)]
 pub struct Ref<'a, F> {
@@ -31,15 +28,6 @@ where
 {
     fn within(&self, input: [T; D]) -> bool {
         self.referenced.within(input)
-    }
-
-    fn union<F>(
-        self,
-        mut other: Vec<Self>,
-        reducer: F,
-    ) -> Result<Union<Self, F, T, D>, UnionError<T>> {
-        other.push(self);
-        Union::new(other, reducer)
     }
 
     fn bounding_box(&self) -> crate::shapes::BoundingBox<T, D> {

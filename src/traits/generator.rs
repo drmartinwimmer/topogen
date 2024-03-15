@@ -1,8 +1,7 @@
-use super::Base;
 use crate::core::Ref;
 use crate::ops;
 
-pub trait Generator<I>: Base {
+pub trait Generator<I>: Sized {
     type Output;
 
     fn generate(&self, input: I) -> Self::Output;

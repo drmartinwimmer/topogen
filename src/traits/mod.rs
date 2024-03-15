@@ -1,11 +1,11 @@
-mod base;
+mod as_ref;
 mod bound;
 mod center;
 mod euclidean;
 mod generator;
 mod shape;
 
-pub use base::Base;
+pub use as_ref::AsRef;
 pub use bound::Bounded;
 pub use center::Center;
 pub use euclidean::{Coordinate, Euclidean};

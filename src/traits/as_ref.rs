@@ -1,9 +1,9 @@
 use crate::core::Ref;
 
-pub trait Base: Sized {
+pub trait AsRef: Sized {
     fn as_ref(&self) -> Ref<Self> {
         Ref::new(self)
     }
 }
 
-impl<B: Sized> Base for B {}
+impl<B: Sized> AsRef for B {}

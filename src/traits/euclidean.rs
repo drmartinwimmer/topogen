@@ -1,5 +1,3 @@
-use super::Base;
-
 pub trait Coordinate:
     Copy
     + std::fmt::Display
@@ -26,7 +24,7 @@ impl<T> Coordinate for T where
 {
 }
 
-pub trait Euclidean<T: Coordinate, const D: usize>: Base {}
+pub trait Euclidean<T: Coordinate, const D: usize>: Sized {}
 
 // pub trait Cartesian<T, const D: usize>: Generator<[T; D]> {
 //     fn repeat(self, center: [T; D], repeat: [T; D]) -> Repeat<T, Self, D> {
