@@ -1,7 +1,7 @@
 use super::{Union, UnionError};
 use crate::{
     shapes::BoundingBox,
-    traits::{Bounded, Coordinate, Euclidean, Generator},
+    traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
 };
 
 #[derive(Debug)]
@@ -57,6 +57,31 @@ where
 
     fn bounding_box(&self) -> BoundingBox<T, D> {
         self.generator.bounding_box()
+    }
+}
+
+impl<G, F, T, const D: usize> Center<T, D> for Map<G, F>
+where
+    T: Coordinate,
+    G: Center<T, D>,
+    F: Clone,
+{
+    fn center(&self) -> &[T; D] {
+        self.generator.center()
+    }
+}
+
+impl<G, F, T, const D: usize> Shape<T, D> for Map<G, F>
+where
+    T: Coordinate,
+    G: Shape<T, D> + Generator<[T; D]>,
+    F: Clone,
+{
+    fn distance(&self, point: [T; D]) -> T
+    where
+        T: num_traits::Float,
+    {
+        self.generator.distance(point)
     }
 }
 
