@@ -4,12 +4,12 @@ use std::marker::PhantomData;
 use super::{Union, UnionError};
 
 #[derive(Debug)]
-pub struct Bitmap<T, G, const D: usize> {
+pub struct Bitmap<G, T, const D: usize> {
     i: PhantomData<[T; D]>,
     pub generator: G,
 }
 
-impl<T, G, const D: usize> Bitmap<T, G, D> {
+impl<G, T, const D: usize> Bitmap<G, T, D> {
     pub(crate) fn new(generator: G) -> Self {
         Self {
             i: PhantomData,
@@ -18,7 +18,7 @@ impl<T, G, const D: usize> Bitmap<T, G, D> {
     }
 }
 
-impl<T, G, const D: usize> Generator<[T; D]> for Bitmap<T, G, D>
+impl<T, G, const D: usize> Generator<[T; D]> for Bitmap<G, T, D>
 where
     T: Coordinate,
     G: Bounded<T, D>,
@@ -30,9 +30,9 @@ where
     }
 }
 
-impl<T: Coordinate, G, const D: usize> Euclidean<T, D> for Bitmap<T, G, D> {}
+impl<T: Coordinate, G, const D: usize> Euclidean<T, D> for Bitmap<G, T, D> {}
 
-impl<T, G, const D: usize> Bounded<T, D> for Bitmap<T, G, D>
+impl<T, G, const D: usize> Bounded<T, D> for Bitmap<G, T, D>
 where
     T: Coordinate,
     G: Bounded<T, D>,

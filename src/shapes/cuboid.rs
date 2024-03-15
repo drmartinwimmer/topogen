@@ -20,7 +20,7 @@ impl<T, const D: usize> Bounded<T, D> for Cuboid<T, D>
 where
     T: Coordinate,
 {
-    type Bitmap = Bitmap<T, Self, D>;
+    type Bitmap = Bitmap<Self, T, D>;
 
     fn bitmap(self) -> Self::Bitmap {
         Bitmap::new(self)

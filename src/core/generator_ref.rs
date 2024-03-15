@@ -32,7 +32,7 @@ where
     T: Coordinate,
     G: Bounded<T, D>,
 {
-    type Bitmap = Bitmap<T, Self, D>;
+    type Bitmap = Bitmap<Self, T, D>;
 
     fn within(&self, input: [T; D]) -> bool {
         self.generator.within(input)

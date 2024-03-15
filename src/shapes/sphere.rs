@@ -20,7 +20,7 @@ impl<T, const D: usize> Bounded<T, D> for Sphere<T, D>
 where
     T: Coordinate,
 {
-    type Bitmap = Bitmap<T, Self, D>;
+    type Bitmap = Bitmap<Self, T, D>;
 
     fn within(&self, point: [T; D]) -> bool {
         let radius: T = point

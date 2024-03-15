@@ -241,7 +241,7 @@ where
     B: Bounded<T, D>,
     T: Coordinate,
 {
-    type Bitmap = Bitmap<T, Self, D>;
+    type Bitmap = Bitmap<Self, T, D>;
 
     fn bounding_box(&self) -> BoundingBox<T, D> {
         self.bounding_box.clone()
