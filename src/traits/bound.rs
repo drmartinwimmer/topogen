@@ -1,7 +1,7 @@
 use super::{euclidean::Euclidean, Coordinate};
 use crate::{
-    ops::{Bitmap, Union, UnionError},
-    shapes::{BoundingBox, WithBoundingBox},
+    ops::{Bitmap, Union, UnionError, WithBoundingBox},
+    shapes::BoundingBox,
 };
 
 pub trait Bounded<T, const D: usize>: Euclidean<T, D>

@@ -10,7 +10,7 @@ pub struct Map<G, F> {
 }
 
 impl<G, F> Map<G, F> {
-    pub(crate) fn new(generator: G, mapper: F) -> Self {
+    pub fn new(generator: G, mapper: F) -> Self {
         Self { generator, mapper }
     }
 }
