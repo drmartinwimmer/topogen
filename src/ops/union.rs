@@ -97,3 +97,30 @@ pub enum Error<T: std::fmt::Display> {
     #[error("Bounding box operation failed: {0:?}")]
     UpperBoundFailed(#[from] BoundingBoxError<T>),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{Error, Union};
+    use crate::{
+        shapes::Cuboid,
+        traits::{Bounded, Generator},
+    };
+
+    #[test]
+    fn generator_union_works() -> Result<(), Error<i32>> {
+        let left_cube = Cuboid {
+            center: [-2, 0, 0],
+            ..Default::default()
+        };
+        let right_cube = Cuboid {
+            center: [2, 0, 0],
+            ..Default::default()
+        };
+        let combined_bitmap =
+            Union::new(vec![left_cube.bitmap(), right_cube.bitmap()], |a, b| a | b)?;
+        assert!(!combined_bitmap.generate([-1, 0, 0]));
+        assert!(!combined_bitmap.generate([0, 0, 0]));
+        assert!(!combined_bitmap.generate([1, 0, 0]));
+        Ok(())
+    }
+}

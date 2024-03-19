@@ -21,3 +21,7 @@ palette = ["image", "dep:palette"]
 [[example]]
 name = "generate_circle_image"
 required-features = ["image"]
+
+[[example]]
+name = "render_hex_tile"
+required-features = ["image", "palette"]

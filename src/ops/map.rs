@@ -118,6 +118,13 @@ mod tests {
     }
 
     #[test]
+    fn map_with_different_output_type_works() {
+        let gen = Constant::new(1);
+        let mapped = gen.map(|x| x as f32 / 2.0);
+        assert_eq!(mapped.generate(0), 0.5);
+    }
+
+    #[test]
     fn map_by_ref_works() {
         let gen = Constant::new(1);
         let mapped = gen.as_ref().map(|x| x + 1);

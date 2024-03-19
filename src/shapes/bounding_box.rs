@@ -1,4 +1,4 @@
-use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
+use crate::traits::Coordinate;
 use std::cmp::Ordering;
 use std::fmt::Display;
 
@@ -205,7 +205,6 @@ where
         }
     }
 }
-
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error<T: Display> {
