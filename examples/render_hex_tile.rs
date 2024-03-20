@@ -3,7 +3,7 @@ extern crate image;
 
 use generative_map::{
     image::Image,
-    ops::{Map, Union},
+    ops::Union,
     shapes::{BoundingBox, Sphere},
     traits::{Bounded, Euclidean, Generator, Shape},
 };
@@ -43,9 +43,7 @@ where
 }
 
 fn combine_terrain_weights<const N: usize>(mut a: [f32; N], b: [f32; N]) -> [f32; N] {
-    //println!("Combining {:?} and {:?}", a, b);
     a.iter_mut().zip(b).for_each(|(a, b)| *a += b);
-    //println!("Result: {:?}", a);
     a
 }
 
@@ -111,9 +109,6 @@ fn main() {
     .unwrap()
     .with_bounding_box(BoundingBox::new_centered([0.0, 0.0], [WIDTH, HEIGHT]));
 
-    let image = Map::new(union, |weights| {
-        render_dominant_terrain(&weights, &terrains)
-    });
-    //let image = union.map(|weights| render_dominant_terrain(&weights, &terrains));
+    let image = union.map(|weights| render_dominant_terrain(&weights, &terrains));
     image.save_image("hex_tile.png", [1.0, 1.0]).unwrap();
 }
