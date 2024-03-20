@@ -55,7 +55,7 @@ where
     G: Center<T, D>,
     F: Clone,
 {
-    fn center(&self) -> &[T; D] {
+    fn center(&self) -> [T; D] {
         self.generator.center()
     }
 }

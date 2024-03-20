@@ -60,7 +60,7 @@ where
     B: Bounded<T, D>,
     T: Coordinate,
 {
-    fn center(&self) -> &[T; D] {
+    fn center(&self) -> [T; D] {
         self.wrapped.center()
     }
 }

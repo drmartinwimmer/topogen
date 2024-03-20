@@ -51,7 +51,7 @@ mod tests {
     #[test]
     fn saves_image_with_palette() {
         let cuboid = Cuboid {
-            half_edges: [2, 2],
+            extents: [2, 2],
             center: [0, 0],
         };
         let image = cuboid.bitmap().map(|b| match b {

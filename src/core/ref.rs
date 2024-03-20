@@ -40,7 +40,7 @@ where
     T: Coordinate,
     C: Center<T, D>,
 {
-    fn center(&self) -> &[T; D] {
+    fn center(&self) -> [T; D] {
         self.referenced.center()
     }
 }

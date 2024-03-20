@@ -57,7 +57,7 @@ where
     T: Coordinate,
     G: Bounded<T, D> + Center<T, D>,
 {
-    fn center(&self) -> &[T; D] {
+    fn center(&self) -> [T; D] {
         self.generator.center()
     }
 }

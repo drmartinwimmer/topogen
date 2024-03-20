@@ -4,12 +4,12 @@ use crate::traits::{Bounded, Center, Coordinate, Euclidean, Shape};
 #[derive(Debug, Clone)]
 pub struct Cuboid<T, const D: usize> {
     pub center: [T; D],
-    pub half_edges: [T; D],
+    pub extents: [T; D],
 }
 
 impl<T: Coordinate, const D: usize> Center<T, D> for Cuboid<T, D> {
-    fn center(&self) -> &[T; D] {
-        &self.center
+    fn center(&self) -> [T; D] {
+        self.center
     }
 }
 
@@ -22,12 +22,12 @@ where
     fn within(&self, point: [T; D]) -> bool {
         point
             .into_iter()
-            .zip(self.half_edges.iter().zip(self.center.iter()))
+            .zip(self.extents.iter().zip(self.center.iter()))
             .all(|(p, (e, c))| p > *c - *e && p < *c + *e)
     }
 
     fn bounding_box(&self) -> BoundingBox<T, D> {
-        BoundingBox::new_centered(self.center, self.half_edges)
+        BoundingBox::new_centered(self.center, self.extents)
     }
 }
 
@@ -38,7 +38,7 @@ where
     fn default() -> Self {
         Self {
             center: [T::default(); D],
-            half_edges: [T::one(); D],
+            extents: [T::one(); D],
         }
     }
 }
@@ -54,7 +54,7 @@ where
         let mut closest_point = point;
         closest_point
             .iter_mut()
-            .zip(self.half_edges.iter().zip(self.center.iter()))
+            .zip(self.extents.iter().zip(self.center.iter()))
             .for_each(|(p, (e, c))| {
                 let (left, right) = (*c - *e, *c + *e);
                 *p = if *p < left {
@@ -98,7 +98,7 @@ mod tests {
     #[test]
     fn cuboid_works_across_types() {
         let cuboid: Cuboid<i32, 1> = Cuboid {
-            half_edges: [5_i32],
+            extents: [5_i32],
             ..Default::default()
         };
         assert!(cuboid.within([4]));
@@ -108,7 +108,7 @@ mod tests {
     #[test]
     fn unit_cuboid_works_across_dimensions() {
         let cuboid: Cuboid<i32, 8> = Cuboid {
-            half_edges: [2_i32; 8],
+            extents: [2_i32; 8],
             ..Default::default()
         };
         assert!(cuboid.within([1; 8]));
@@ -117,7 +117,7 @@ mod tests {
     #[test]
     fn cuboid_moves() {
         let cuboid: Cuboid<i32, 2> = Cuboid {
-            half_edges: [2, 2],
+            extents: [2, 2],
             center: [2, 2],
         };
         assert!(!cuboid.within([0, 0]));
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn cuboid_works_with_distinct_sides() {
         let cuboid: Cuboid<i32, 3> = Cuboid {
-            half_edges: [2, 3, 4],
+            extents: [2, 3, 4],
             ..Default::default()
         };
         assert!(cuboid.within([1, 2, 3]));
@@ -148,7 +148,7 @@ mod tests {
             center,
             ..Default::default()
         };
-        assert_eq!(&center, cuboid.center());
+        assert_eq!(center, cuboid.center());
     }
 
     #[test]
@@ -173,7 +173,7 @@ mod tests {
     #[test]
     fn returns_distance_for_other_sides() {
         let cuboid: Cuboid<f32, 3> = Cuboid {
-            half_edges: [5.0, 10.0, 15.0],
+            extents: [5.0, 10.0, 15.0],
             ..Default::default()
         };
         assert_eq!(0.0, cuboid.distance([0.0, 0.0, 0.0]));

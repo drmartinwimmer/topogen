@@ -1,4 +1,4 @@
-use crate::ops::BoundTo;
+use crate::ops::{BoundTo, Scale};
 
 use super::Bounded;
 
@@ -8,9 +8,13 @@ pub trait Coordinate:
     + std::fmt::Debug
     + PartialOrd
     + std::ops::Add<Output = Self>
+    + std::ops::AddAssign
     + std::ops::Sub<Output = Self>
+    + std::ops::SubAssign
     + std::ops::Mul<Output = Self>
+    + std::ops::MulAssign
     + std::ops::Div<Output = Self>
+    + std::ops::DivAssign
     + std::iter::Sum
 {
 }
@@ -21,9 +25,13 @@ impl<T> Coordinate for T where
         + std::fmt::Debug
         + PartialOrd
         + std::ops::Add<Output = T>
+        + std::ops::AddAssign
         + std::ops::Sub<Output = T>
+        + std::ops::SubAssign
         + std::ops::Mul<Output = T>
+        + std::ops::MulAssign
         + std::ops::Div<Output = T>
+        + std::ops::DivAssign
         + std::iter::Sum
 {
 }
@@ -31,6 +39,10 @@ impl<T> Coordinate for T where
 pub trait Euclidean<T: Coordinate, const D: usize>: Sized {
     fn bound_to<B: Bounded<T, D>>(self, bound_to: B) -> BoundTo<Self, B, T, D> {
         BoundTo::new(self, bound_to)
+    }
+
+    fn scale(self, factor: [T; D]) -> Scale<Self, T, D> {
+        Scale::new(self, factor)
     }
 }
 

@@ -25,11 +25,11 @@ where
         Self::Bounded(bounding_box)
     }
 
-    pub fn new_centered(center: [T; D], half_edge: [T; D]) -> Self {
+    pub fn new_centered(center: [T; D], extents: [T; D]) -> Self {
         let mut bounding_box = [DimensionBound::Unbounded; D];
         for i in 0..D {
             bounding_box[i] =
-                DimensionBound::Range(center[i] - half_edge[i], center[i] + half_edge[i]);
+                DimensionBound::Range(center[i] - extents[i], center[i] + extents[i]);
         }
         Self::Bounded(bounding_box)
     }
@@ -89,6 +89,19 @@ where
                     intersect[i] = b1[i].for_intersect(b2[i])?;
                 }
                 BoundingBox::new_bounded(intersect)
+            }
+        }
+    }
+
+    pub fn scale(self, factor: [T; D]) -> Self {
+        match self {
+            BoundingBox::Unbounded => BoundingBox::Unbounded,
+            BoundingBox::Empty => BoundingBox::Empty,
+            BoundingBox::Bounded(mut b) => {
+                b.iter_mut().zip(factor).for_each(|(b, f)| {
+                    *b = b.scale(f);
+                });
+                BoundingBox::Bounded(b)
             }
         }
     }
@@ -202,6 +215,16 @@ where
             (DimensionBound::Range(min1, max1), DimensionBound::Range(min2, max2)) => {
                 range(max(min1, min2)?, min(max1, max2)?)
             }
+        }
+    }
+
+    fn scale(self, factor: T) -> Self {
+        match self {
+            DimensionBound::Empty => DimensionBound::Empty,
+            DimensionBound::Unbounded => DimensionBound::Unbounded,
+            DimensionBound::Min(min) => DimensionBound::Min(min * factor),
+            DimensionBound::Max(max) => DimensionBound::Max(max * factor),
+            DimensionBound::Range(min, max) => DimensionBound::Range(min * factor, max * factor),
         }
     }
 }

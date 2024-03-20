@@ -8,8 +8,8 @@ pub struct Sphere<T, const D: usize> {
 }
 
 impl<T: Coordinate, const D: usize> Center<T, D> for Sphere<T, D> {
-    fn center(&self) -> &[T; D] {
-        &self.center
+    fn center(&self) -> [T; D] {
+        self.center
     }
 }
 
@@ -132,7 +132,7 @@ mod tests {
             center,
             ..Default::default()
         };
-        assert_eq!(&center, sphere.center());
+        assert_eq!(center, sphere.center());
     }
 
     #[test]

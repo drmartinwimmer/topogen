@@ -38,7 +38,7 @@ where
     T: Coordinate,
     G: Center<T, D>,
 {
-    fn center(&self) -> &[T; D] {
+    fn center(&self) -> [T; D] {
         self.shape.center()
     }
 }
