@@ -28,8 +28,7 @@ where
     pub fn new_centered(center: [T; D], extents: [T; D]) -> Self {
         let mut bounding_box = [DimensionBound::Unbounded; D];
         for i in 0..D {
-            bounding_box[i] =
-                DimensionBound::Range(center[i] - extents[i], center[i] + extents[i]);
+            bounding_box[i] = DimensionBound::Range(center[i] - extents[i], center[i] + extents[i]);
         }
         Self::Bounded(bounding_box)
     }
@@ -100,6 +99,19 @@ where
             BoundingBox::Bounded(mut b) => {
                 b.iter_mut().zip(factor).for_each(|(b, f)| {
                     *b = b.scale(f);
+                });
+                BoundingBox::Bounded(b)
+            }
+        }
+    }
+
+    pub fn translate(self, offset: [T; D]) -> Self {
+        match self {
+            BoundingBox::Unbounded => BoundingBox::Unbounded,
+            BoundingBox::Empty => BoundingBox::Empty,
+            BoundingBox::Bounded(mut b) => {
+                b.iter_mut().zip(offset).for_each(|(b, o)| {
+                    *b = b.translate(o);
                 });
                 BoundingBox::Bounded(b)
             }
@@ -225,6 +237,16 @@ where
             DimensionBound::Min(min) => DimensionBound::Min(min * factor),
             DimensionBound::Max(max) => DimensionBound::Max(max * factor),
             DimensionBound::Range(min, max) => DimensionBound::Range(min * factor, max * factor),
+        }
+    }
+
+    fn translate(self, offset: T) -> Self {
+        match self {
+            DimensionBound::Empty => DimensionBound::Empty,
+            DimensionBound::Unbounded => DimensionBound::Unbounded,
+            DimensionBound::Min(min) => DimensionBound::Min(min + offset),
+            DimensionBound::Max(max) => DimensionBound::Max(max + offset),
+            DimensionBound::Range(min, max) => DimensionBound::Range(min + offset, max + offset),
         }
     }
 }

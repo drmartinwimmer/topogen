@@ -1,4 +1,4 @@
-use crate::ops::{BoundTo, Scale};
+use crate::ops::{BoundTo, Scale, Translate};
 
 use super::Bounded;
 
@@ -43,6 +43,10 @@ pub trait Euclidean<T: Coordinate, const D: usize>: Sized {
 
     fn scale(self, factor: [T; D]) -> Scale<Self, T, D> {
         Scale::new(self, factor)
+    }
+
+    fn translate(self, translation: [T; D]) -> Translate<Self, T, D> {
+        Translate::new(self, translation)
     }
 }
 
