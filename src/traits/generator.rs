@@ -1,14 +1,9 @@
-use crate::core::Ref;
 use crate::ops;
 
 pub trait Generator<I>: Sized {
     type Output;
 
     fn generate(&self, input: I) -> Self::Output;
-
-    fn as_ref(&self) -> Ref<Self> {
-        Ref::new(self)
-    }
 
     fn map<O, F>(self, f: F) -> ops::Map<Self, F>
     where

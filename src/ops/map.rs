@@ -108,7 +108,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::core::Constant;
-    use crate::traits::Generator;
+    use crate::traits::{ByRef, Generator};
 
     #[test]
     fn map_by_value_works() {
@@ -127,7 +127,7 @@ mod tests {
     #[test]
     fn map_by_ref_works() {
         let gen = Constant::new(1);
-        let mapped = gen.as_ref().map(|x| x + 1);
+        let mapped = gen.by_ref().map(|x| x + 1);
         assert_eq!(mapped.generate(0), 2);
         assert_eq!(gen.generate(0), 1);
     }
