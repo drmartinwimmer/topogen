@@ -8,6 +8,7 @@ use generative_map::{
     traits::{Bounded, Euclidean, Generator, Shape},
 };
 use palette::Hsla;
+use std::path::Path;
 
 struct Terrain {
     color: palette::Hsl,
@@ -110,5 +111,7 @@ fn main() {
     .with_bounding_box(BoundingBox::new_centered([0.0, 0.0], [WIDTH, HEIGHT]));
 
     let image = union.map(|weights| render_dominant_terrain(&weights, &terrains));
-    image.save_image("hex_tile.png", [1.0, 1.0]).unwrap();
+    image
+        .save_image(Path::new("hex_tile.png"), [1.0, 1.0])
+        .unwrap();
 }

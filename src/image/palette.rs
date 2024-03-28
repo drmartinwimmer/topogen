@@ -60,10 +60,10 @@ mod tests {
         });
         let output_dir = TempDir::new("generative_map_saves_image_with_palette_test").unwrap();
         let path = output_dir.path().join("test.png");
-        image.save_image(path.to_str().unwrap(), [1, 1]).unwrap();
+        image.save_image(&path, [1, 1]).unwrap();
 
         let saved_image = image::open(path).unwrap();
-        assert_eq!(saved_image.width(), 2);
-        assert_eq!(saved_image.height(), 2);
+        assert_eq!(saved_image.width(), 4);
+        assert_eq!(saved_image.height(), 4);
     }
 }

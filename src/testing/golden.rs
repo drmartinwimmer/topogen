@@ -1,6 +1,6 @@
 use std::{
     env,
-    fs::File,
+    fs::{create_dir_all, File},
     io::{BufRead, BufReader},
     path::{Path, PathBuf},
 };
@@ -20,12 +20,12 @@ impl Golden {
             .join("testdata/golden")
             .join(path);
         let tempdir = TempDir::new("golden").unwrap();
-        let write_path = PathBuf::new()
-            .join(match env::var("UPDATE_GOLDEN") {
-                Ok(str) if str == "true" || str == "1" => &golden_path,
-                _ => tempdir.path(),
-            })
-            .join(path);
+        let write_path = match env::var("UPDATE_GOLDEN") {
+            Ok(str) if str == "true" || str == "1" => PathBuf::new().join(&golden_path),
+            _ => PathBuf::new().join(tempdir.path()).join(path),
+        };
+        println!("write_path: {}", write_path.display());
+        create_dir_all(write_path.parent().unwrap()).unwrap();
 
         Self {
             golden_path,

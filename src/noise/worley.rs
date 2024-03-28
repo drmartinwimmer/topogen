@@ -42,11 +42,10 @@ where
         let pt_seed: [u8; 16] = seed[0..16].try_into().unwrap();
         let mut rng = Pcg32::from_seed(pt_seed);
         let mut positions = [[T::zero(); D]; 256];
-        for p in positions.iter_mut() {
-            for j in 0..D {
-                p[j] = rng.gen_range(T::zero()..cell_size[j]);
-            }
-        }
+        positions.iter_mut().for_each(|p| {
+            p.iter_mut()
+                .for_each(|d| *d = rng.gen_range(T::zero()..T::one()))
+        });
         Self {
             distance_gen,
             cell_size,
@@ -55,10 +54,28 @@ where
         }
     }
 
+    pub fn set_cell_size(mut self, cell_size: [T; D]) -> Self {
+        self.cell_size = cell_size;
+        self
+    }
+
+    pub fn set_distance_gen<N>(self, distance_gen: N) -> Worley<N, T, D> {
+        Worley {
+            distance_gen,
+            cell_size: self.cell_size,
+            permutation_table: self.permutation_table,
+            offsets: self.offsets,
+        }
+    }
+
     fn get_distance_for_cell(&self, cell: [u8; D], mut point: [T; D]) -> G::Output {
         let index = self.permutation_table.generate(cell);
-        let offsets = self.offsets[index as usize];
-        point.iter_mut().zip(offsets).for_each(|(p, o)| *p -= o);
+        let offsets = &self.offsets[index as usize];
+        point
+            .iter_mut()
+            .zip(offsets)
+            .zip(self.cell_size)
+            .for_each(|((p, o), s)| *p -= *o * s);
         self.distance_gen.generate(point)
     }
 
@@ -71,12 +88,14 @@ where
         if d == D {
             return self.get_distance_for_cell(cell, point);
         }
+        let cell_d = cell[d];
+        let point_d = point[d];
         let baseline = self.get_combined_distance_for_cell_d(cell, point, d + 1);
-        cell[d] += 1;
-        point[d] -= T::one();
+        cell[d] = cell_d.wrapping_add(1);
+        point[d] = point_d - self.cell_size[d];
         let right = self.get_combined_distance_for_cell_d(cell, point, d + 1);
-        cell[d] -= 2;
-        point[d] += T::one() + T::one();
+        cell[d] = cell_d.wrapping_sub(1);
+        point[d] = point_d + self.cell_size[d];
         let left = self.get_combined_distance_for_cell_d(cell, point, d + 1);
         baseline.min(right).min(left)
     }
@@ -111,5 +130,36 @@ where
             .zip(self.cell_size)
             .for_each(|((p, c), s)| *p = (*p / s) - c);
         self.get_combined_distance_for_cell(cell_u8, point)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[cfg(feature = "palette")]
+    mod golden {
+        use super::super::Worley;
+        use crate::image::Image;
+        use crate::{
+            shapes::Cuboid,
+            testing::Golden,
+            traits::{Euclidean, Generator},
+        };
+        use ::palette::{encoding, Hsl, RgbHue};
+        use rand::SeedableRng;
+        use std::path::Path;
+
+        #[test]
+        fn worley_golden() {
+            let golden = Golden::new(Path::new("noise/worley.png"));
+            let worley = Worley::seed_from_u64(12345)
+                .set_cell_size([20.0; 2])
+                .map(|d| Hsl::<encoding::Srgb, f32>::new(RgbHue::new(176.), 0.19, 1.0 / d))
+                .bound_to(Cuboid {
+                    center: [0.0; 2],
+                    extents: [100.0; 2],
+                });
+            worley.save_image(golden.write_path(), [1.0; 2]).unwrap();
+            assert!(golden.is_identical());
+        }
     }
 }

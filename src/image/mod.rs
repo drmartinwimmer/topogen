@@ -6,9 +6,10 @@ use num_traits::AsPrimitive;
 use crate::shapes::{BoundingBox, DimensionBound};
 use crate::traits::{Bounded, Coordinate, Generator};
 use std::fmt::Display;
+use std::path::Path;
 
 pub trait Image<T: Display>: Generator<[T; 2]> {
-    fn save_image(self, path: &str, step: [T; 2]) -> Result<(), Error<T>>;
+    fn save_image(self, path: &Path, step: [T; 2]) -> Result<(), Error<T>>;
 }
 
 pub trait IntoPixel {
@@ -53,7 +54,7 @@ where
     C::Pixel: image::PixelWithColorType,
     [<C::Pixel as image::Pixel>::Subpixel]: image::EncodableLayout,
 {
-    fn save_image(self, path: &str, step: [T; 2]) -> Result<(), Error<T>> {
+    fn save_image(self, path: &Path, step: [T; 2]) -> Result<(), Error<T>> {
         let bounds = match self.bounding_box() {
             BoundingBox::Empty => return Err(Error::EmptyBoundingBox),
             BoundingBox::Unbounded => return Err(Error::UnboundedBoundingBox),
@@ -125,7 +126,7 @@ mod tests {
         });
         let output_dir = TempDir::new("generative_map_saves_image_test").unwrap();
         let path = output_dir.path().join("test.png");
-        image.save_image(path.to_str().unwrap(), [1, 1]).unwrap();
+        image.save_image(&path, [1, 1]).unwrap();
 
         let saved_image = image::open(path).unwrap();
         assert_eq!(saved_image.width(), 4);
