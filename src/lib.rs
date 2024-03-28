@@ -5,4 +5,6 @@ pub mod image;
 pub mod noise;
 pub mod ops;
 pub mod shapes;
+#[cfg(test)]
+pub mod testing;
 pub mod traits;
