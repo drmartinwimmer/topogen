@@ -1,6 +1,6 @@
-use crate::ops::{BoundTo, Scale, Translate};
+use crate::ops::{BoundTo, Fbm, Scale, Translate};
 
-use super::Bounded;
+use super::{Bounded, Generator};
 
 pub trait Coordinate:
     Copy
@@ -39,6 +39,18 @@ impl<T> Coordinate for T where
 pub trait Euclidean<T: Coordinate, const D: usize>: Sized {
     fn bound_to<B: Bounded<T, D>>(self, bound_to: B) -> BoundTo<Self, B, T, D> {
         BoundTo::new(self, bound_to)
+    }
+
+    fn fbm<O>(
+        self,
+        octaves: usize,
+        lacunarity: T,
+        gain: <Self as Generator<[T; D]>>::Output,
+    ) -> Fbm<Self, T, D>
+    where
+        Self: Generator<[T; D]>,
+    {
+        Fbm::new(self, octaves, lacunarity, gain)
     }
 
     fn scale(self, factor: [T; D]) -> Scale<Self, T, D> {
