@@ -42,3 +42,45 @@ where
         self.shape.center()
     }
 }
+
+#[derive(Debug)]
+pub struct CenterDistanceMap<C, T, const D: usize> {
+    i: PhantomData<[T; D]>,
+    pub center: C,
+}
+
+impl<C, T, const D: usize> CenterDistanceMap<C, T, D> {
+    pub(crate) fn new(center: C) -> Self {
+        Self {
+            i: PhantomData,
+            center,
+        }
+    }
+}
+
+impl<C, T, const D: usize> Generator<[T; D]> for CenterDistanceMap<C, T, D>
+where
+    T: Coordinate + num_traits::Float,
+    C: Center<T, D>,
+{
+    type Output = T;
+
+    fn generate(&self, input: [T; D]) -> Self::Output {
+        self.center.center_distance(input)
+    }
+}
+
+impl<E, T: Coordinate, const D: usize> Euclidean<T, D> for CenterDistanceMap<E, T, D> where
+    E: Euclidean<T, D>
+{
+}
+
+impl<C, T, const D: usize> Center<T, D> for CenterDistanceMap<C, T, D>
+where
+    T: Coordinate,
+    C: Center<T, D>,
+{
+    fn center(&self) -> [T; D] {
+        self.center.center()
+    }
+}

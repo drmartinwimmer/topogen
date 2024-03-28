@@ -1,3 +1,9 @@
+mod permutation_table;
+mod worley;
+
+pub use permutation_table::PermutationTable;
+pub use worley::Worley;
+
 use crate::traits::{Coordinate, Euclidean, Generator};
 use noise::NoiseFn;
 use rand::SeedableRng;
