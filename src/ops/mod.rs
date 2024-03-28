@@ -1,6 +1,7 @@
 mod bitmap;
 mod bound_to;
 mod distance_map;
+mod fbm;
 mod map;
 //mod repeat;
 mod scale;
@@ -11,6 +12,7 @@ mod with_bounding_box;
 pub use bitmap::Bitmap;
 pub use bound_to::BoundTo;
 pub use distance_map::DistanceMap;
+pub use fbm::Fbm;
 pub use map::{Map, MapInput};
 //pub use repeat::Repeat;
 pub use scale::Scale;
