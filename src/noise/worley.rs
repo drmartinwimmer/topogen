@@ -1,4 +1,6 @@
-use num_traits::{AsPrimitive, Float, One, Zero};
+use std::fmt::Debug;
+
+use num_traits::{Float, One, Zero};
 use rand::{distributions::uniform::SampleUniform, Rng, SeedableRng};
 use rand_pcg::Pcg32;
 
@@ -35,7 +37,7 @@ where
 impl<G, T, const D: usize> Worley<G, T, D>
 where
     G: Generator<[T; D]>,
-    G::Output: Float,
+    G::Output: Float + Debug,
     T: Coordinate + Zero + SampleUniform + Float,
 {
     pub fn new(seed: [u8; 32], distance_gen: G, cell_size: [T; D]) -> Self {
@@ -107,11 +109,27 @@ where
 
 impl<G, T, const D: usize> Euclidean<T, D> for Worley<G, T, D> where T: Coordinate {}
 
+trait WrapToU8 {
+    fn wrap_to_u8(self) -> u8;
+}
+
+impl WrapToU8 for f32 {
+    fn wrap_to_u8(self) -> u8 {
+        self.rem_euclid(256.0) as u8
+    }
+}
+
+impl WrapToU8 for f64 {
+    fn wrap_to_u8(self) -> u8 {
+        self.rem_euclid(256.0) as u8
+    }
+}
+
 impl<G, T, const D: usize> Generator<[T; D]> for Worley<G, T, D>
 where
     G: Generator<[T; D]>,
-    G::Output: Float,
-    T: Coordinate + Zero + SampleUniform + Float + AsPrimitive<u8>,
+    G::Output: Float + Debug,
+    T: Coordinate + Zero + SampleUniform + Float + WrapToU8,
 {
     type Output = G::Output;
 
@@ -122,19 +140,40 @@ where
             .zip(self.cell_size)
             .for_each(|((i, p), s)| *i = (p / s).floor());
         let mut cell_u8 = [0u8; D];
-        cell_u8.iter_mut().zip(cell).for_each(|(c, p)| *c = p.as_());
+        cell_u8
+            .iter_mut()
+            .zip(cell)
+            .for_each(|(c, p)| *c = p.wrap_to_u8());
 
         point
             .iter_mut()
             .zip(cell)
             .zip(self.cell_size)
-            .for_each(|((p, c), s)| *p = (*p / s) - c);
+            .for_each(|((p, c), s)| *p -= c * s);
         self.get_combined_distance_for_cell(cell_u8, point)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use rand::SeedableRng;
+
+    use crate::traits::Generator;
+
+    use super::Worley;
+
+    #[test]
+    fn no_sharp_edges_around_cell_boundaries() {
+        let worley = Worley::seed_from_u64(12345).set_cell_size([10.0; 2]);
+        let mut line = [0.0; 10];
+        for (i, l) in line.iter_mut().enumerate() {
+            *l = worley.generate([i as f32 * 0.1 - 0.5, 0.5 - i as f32 * 0.3]);
+        }
+        for w in line.windows(2) {
+            assert!((w[0] - w[1]).abs() < 0.3);
+        }
+    }
+
     #[cfg(feature = "palette")]
     mod golden {
         use super::super::Worley;
@@ -152,11 +191,11 @@ mod tests {
         fn worley_golden() {
             let golden = Golden::new(Path::new("noise/worley.png"));
             let worley = Worley::seed_from_u64(12345)
-                .set_cell_size([20.0; 2])
-                .map(|d| Hsl::<encoding::Srgb, f32>::new(RgbHue::new(176.), 0.19, 1.0 / d))
+                .set_cell_size([50.0; 2])
+                .map(|d| Hsl::<encoding::Srgb, f32>::new(RgbHue::new(176.), 0.19, d / 100.0))
                 .bound_to(Cuboid {
                     center: [0.0; 2],
-                    extents: [100.0; 2],
+                    extents: [300.0; 2],
                 });
             worley.save_image(golden.write_path(), [1.0; 2]).unwrap();
             assert!(golden.is_identical());

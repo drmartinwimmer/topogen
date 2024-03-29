@@ -28,3 +28,23 @@ impl<const D: usize> Generator<[u8; D]> for PermutationTable {
         point.iter().fold(0, |acc, c| acc ^ self.table[*c as usize])
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::PermutationTable;
+    use crate::traits::Generator;
+    use rand::SeedableRng;
+
+    #[test]
+    fn permutation_table_distributes_evenly_for_slice() {
+        let pt = PermutationTable::seed_from_u64(12);
+        let mut output = [0; 256];
+        for i in 0..=255 {
+            output[i as usize] = pt.generate([i, 13]);
+        }
+        output.sort();
+        for (i, o) in output.iter().enumerate() {
+            assert_eq!(*o, i as u8);
+        }
+    }
+}
