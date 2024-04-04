@@ -5,12 +5,16 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use tempdir::TempDir;
+use tempfile::{Builder, NamedTempFile};
+
+enum WritePath {
+    TempFile(NamedTempFile),
+    UpdateGolden,
+}
 
 pub struct Golden {
     golden_path: PathBuf,
-    write_path: PathBuf,
-    _tempdir: TempDir,
+    write_path: WritePath,
 }
 
 impl Golden {
@@ -19,23 +23,33 @@ impl Golden {
             .join(env!("CARGO_MANIFEST_DIR"))
             .join("testdata/golden")
             .join(path);
-        let tempdir = TempDir::new("golden").unwrap();
-        let write_path = match env::var("UPDATE_GOLDEN") {
-            Ok(str) if str == "true" || str == "1" => PathBuf::new().join(&golden_path),
-            _ => PathBuf::new().join(tempdir.path()).join(path),
+        let write_path = match Self::is_update() {
+            true => WritePath::UpdateGolden,
+            false => WritePath::TempFile(match path.file_name() {
+                Some(name) => Builder::new().suffix(name).tempfile().unwrap(),
+                None => Builder::new().tempfile().unwrap(),
+            }),
         };
-        println!("write_path: {}", write_path.display());
-        create_dir_all(write_path.parent().unwrap()).unwrap();
+        if matches!(&write_path, &WritePath::UpdateGolden) {
+            create_dir_all(golden_path.parent().unwrap()).unwrap();
+        }
 
         Self {
             golden_path,
             write_path,
-            _tempdir: tempdir,
         }
     }
 
+    fn is_update() -> bool {
+        matches!(env::var("UPDATE_GOLDEN"),
+            Ok(str) if str == "true" || str == "1")
+    }
+
     pub fn write_path(&self) -> &Path {
-        &self.write_path
+        match self.write_path {
+            WritePath::TempFile(ref tempfile) => tempfile.path(),
+            WritePath::UpdateGolden => self.golden_path(),
+        }
     }
 
     pub fn golden_path(&self) -> &Path {

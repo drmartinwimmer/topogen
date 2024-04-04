@@ -106,13 +106,12 @@ pub enum Error<T: Display> {
 
 #[cfg(test)]
 mod tests {
-    use tempdir::TempDir;
-
     use super::Image;
     use crate::{
         shapes::Cuboid,
         traits::{Bounded, Generator},
     };
+    use tempfile::Builder;
 
     #[test]
     fn saves_image() {
@@ -124,11 +123,10 @@ mod tests {
             true => image::Rgb([255_u8, 255, 255]),
             false => image::Rgb([0_u8, 0, 0]),
         });
-        let output_dir = TempDir::new("generative_map_saves_image_test").unwrap();
-        let path = output_dir.path().join("test.png");
-        image.save_image(&path, [1, 1]).unwrap();
+        let tempfile = Builder::new().suffix(".png").tempfile().unwrap();
+        image.save_image(tempfile.path(), [1, 1]).unwrap();
 
-        let saved_image = image::open(path).unwrap();
+        let saved_image = image::open(tempfile.path()).unwrap();
         assert_eq!(saved_image.width(), 4);
         assert_eq!(saved_image.height(), 4);
     }

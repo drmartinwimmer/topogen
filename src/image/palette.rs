@@ -46,7 +46,7 @@ mod tests {
     use crate::shapes::Cuboid;
     use crate::traits::{Bounded, Generator};
     use palette::{Hsl, RgbHue};
-    use tempdir::TempDir;
+    use tempfile::Builder;
 
     #[test]
     fn saves_image_with_palette() {
@@ -58,11 +58,10 @@ mod tests {
             true => Hsl::new(RgbHue::new(0.3), 0.5_f32, 1.0),
             false => Hsl::new(RgbHue::new(0.3), 0.5, 0.0),
         });
-        let output_dir = TempDir::new("generative_map_saves_image_with_palette_test").unwrap();
-        let path = output_dir.path().join("test.png");
-        image.save_image(&path, [1, 1]).unwrap();
+        let tempfile = Builder::new().suffix(".png").tempfile().unwrap();
+        image.save_image(tempfile.path(), [1, 1]).unwrap();
 
-        let saved_image = image::open(path).unwrap();
+        let saved_image = image::open(tempfile.path()).unwrap();
         assert_eq!(saved_image.width(), 4);
         assert_eq!(saved_image.height(), 4);
     }
