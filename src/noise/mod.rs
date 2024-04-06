@@ -1,10 +1,11 @@
+mod noise_fn;
 mod permutation_table;
 mod worley;
 
 pub use permutation_table::PermutationTable;
 pub use worley::Worley;
 
-use crate::traits::{Coordinate, Euclidean, Generator};
+use crate::traits::{Coordinate, Euclidean};
 use noise::NoiseFn;
 use rand::SeedableRng;
 
@@ -15,18 +16,6 @@ pub type Simplex = Noise<noise::Simplex>;
 impl<N> Noise<N> {
     pub fn new(noise: N) -> Self {
         Self(noise)
-    }
-}
-
-impl<N, T, const D: usize> Generator<[T; D]> for Noise<N>
-where
-    T: Coordinate,
-    N: NoiseFn<T, D>,
-{
-    type Output = f64;
-
-    fn generate(&self, point: [T; D]) -> Self::Output {
-        self.0.get(point)
     }
 }
 

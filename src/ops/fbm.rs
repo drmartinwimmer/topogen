@@ -3,7 +3,7 @@ use num_traits::One;
 use crate::traits::{Center, Coordinate, Euclidean, Generator};
 use std::{
     marker::PhantomData,
-    ops::{AddAssign, Mul, MulAssign},
+    ops::{AddAssign, Div, Mul, MulAssign},
 };
 
 pub struct Fbm<G, T, const D: usize>
@@ -37,7 +37,13 @@ where
 impl<G, T, const D: usize> Generator<[T; D]> for Fbm<G, T, D>
 where
     G: Generator<[T; D]> + Euclidean<T, D>,
-    G::Output: Copy + Default + AddAssign + Mul<Output = G::Output> + MulAssign + One,
+    G::Output: Copy
+        + Default
+        + AddAssign
+        + Mul<Output = G::Output>
+        + MulAssign
+        + Div<Output = G::Output>
+        + One,
     T: Coordinate,
 {
     type Output = G::Output;
@@ -45,12 +51,14 @@ where
     fn generate(&self, mut input: [T; D]) -> Self::Output {
         let mut output = Self::Output::default();
         let mut amplitude = Self::Output::one();
+        let mut max_amplitude = Self::Output::one();
         for _ in 0..self.octaves {
             output += self.generator.generate(input) * amplitude;
             input.iter_mut().for_each(|i| *i *= self.lacunarity);
             amplitude *= self.gain;
+            max_amplitude += amplitude;
         }
-        output
+        output / max_amplitude
     }
 }
 
