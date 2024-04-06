@@ -5,7 +5,7 @@ use generative_map::{
     image::Image,
     ops::Union,
     shapes::{BoundingBox, Sphere},
-    traits::{Bounded, Euclidean, Generator, Shape},
+    traits::{Bounded, Euclidean, EuclideanVec, Generator, Shape},
 };
 use palette::Hsla;
 use std::path::Path;
@@ -43,9 +43,8 @@ where
         })
 }
 
-fn combine_terrain_weights<const N: usize>(mut a: [f32; N], b: [f32; N]) -> [f32; N] {
-    a.iter_mut().zip(b).for_each(|(a, b)| *a += b);
-    a
+fn combine_terrain_weights<const N: usize>(a: [f32; N], b: [f32; N]) -> [f32; N] {
+    a.add(b)
 }
 
 fn render_dominant_terrain<const N: usize>(

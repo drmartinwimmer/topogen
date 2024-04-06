@@ -1,4 +1,4 @@
-use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator};
+use crate::traits::{Bounded, Center, Coordinate, Euclidean, EuclideanVec, Generator};
 
 #[derive(Debug)]
 pub struct Translate<E, T, const D: usize> {
@@ -12,10 +12,7 @@ where
     T: Coordinate,
 {
     pub fn new(wrapped: E, offset: [T; D]) -> Self {
-        Self {
-            wrapped,
-            offset,
-        }
+        Self { wrapped, offset }
     }
 }
 
@@ -31,12 +28,8 @@ where
     B: Bounded<T, D>,
     T: Coordinate,
 {
-    fn within(&self, mut input: [T; D]) -> bool {
-        input
-            .iter_mut()
-            .zip(self.offset.iter())
-            .for_each(|(i, s)| *i -= *s);
-        self.wrapped.within(input)
+    fn within(&self, input: [T; D]) -> bool {
+        self.wrapped.within(input.sub(self.offset))
     }
 
     fn bounding_box(&self) -> crate::shapes::BoundingBox<T, D> {
@@ -50,12 +43,7 @@ where
     T: Coordinate,
 {
     fn center(&self) -> [T; D] {
-        let mut center = self.wrapped.center();
-        center
-            .iter_mut()
-            .zip(self.offset.iter())
-            .for_each(|(i, s)| *i += *s);
-        center
+        self.wrapped.center().add(self.offset)
     }
 }
 
@@ -66,12 +54,8 @@ where
 {
     type Output = G::Output;
 
-    fn generate(&self, mut input: [T; D]) -> Self::Output {
-        input
-            .iter_mut()
-            .zip(self.offset.iter())
-            .for_each(|(i, s)| *i -= *s);
-        self.wrapped.generate(input)
+    fn generate(&self, input: [T; D]) -> Self::Output {
+        self.wrapped.generate(input.sub(self.offset))
     }
 }
 

@@ -1,6 +1,5 @@
+use crate::traits::{Center, Coordinate, Euclidean, EuclideanVec, Generator};
 use num_traits::One;
-
-use crate::traits::{Center, Coordinate, Euclidean, Generator};
 use std::{
     marker::PhantomData,
     ops::{AddAssign, Div, Mul, MulAssign},
@@ -54,7 +53,7 @@ where
         let mut max_amplitude = Self::Output::one();
         for _ in 0..self.octaves {
             output += self.generator.generate(input) * amplitude;
-            input.iter_mut().for_each(|i| *i *= self.lacunarity);
+            input.scalar_mul_assign(self.lacunarity);
             amplitude *= self.gain;
             max_amplitude += amplitude;
         }

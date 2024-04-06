@@ -36,6 +36,55 @@ impl<T> Coordinate for T where
 {
 }
 
+pub trait EuclideanVec<T: Coordinate, const D: usize>: Sized {
+    fn add(self, rhs: Self) -> Self;
+    fn add_assign(&mut self, rhs: Self);
+    fn sub(self, rhs: Self) -> Self;
+    fn sub_assign(&mut self, rhs: Self);
+    fn scalar_mul(self, rhs: T) -> Self;
+    fn scalar_mul_assign(&mut self, rhs: T);
+    fn scalar_div(self, rhs: T) -> Self;
+    fn scalar_div_assign(&mut self, rhs: T);
+}
+
+impl<T: Coordinate, const D: usize> EuclideanVec<T, D> for [T; D] {
+    fn add(mut self, rhs: Self) -> Self {
+        self.add_assign(rhs);
+        self
+    }
+
+    fn add_assign(&mut self, rhs: Self) {
+        self.iter_mut().zip(rhs).for_each(|(a, b)| *a += b);
+    }
+
+    fn sub(mut self, rhs: Self) -> Self {
+        self.sub_assign(rhs);
+        self
+    }
+
+    fn sub_assign(&mut self, rhs: Self) {
+        self.iter_mut().zip(rhs).for_each(|(a, b)| *a -= b);
+    }
+
+    fn scalar_mul(mut self, rhs: T) -> Self {
+        self.scalar_mul_assign(rhs);
+        self
+    }
+
+    fn scalar_mul_assign(&mut self, rhs: T) {
+        self.iter_mut().for_each(|i| *i *= rhs);
+    }
+
+    fn scalar_div(mut self, rhs: T) -> Self {
+        self.scalar_div_assign(rhs);
+        self
+    }
+
+    fn scalar_div_assign(&mut self, rhs: T) {
+        self.iter_mut().for_each(|i| *i /= rhs);
+    }
+}
+
 pub trait Euclidean<T: Coordinate, const D: usize>: Sized {
     fn bound_to<B: Bounded<T, D>>(self, bound_to: B) -> BoundTo<Self, B, T, D> {
         BoundTo::new(self, bound_to)
