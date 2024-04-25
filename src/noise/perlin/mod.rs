@@ -217,7 +217,7 @@ mod tests {
         fn improved_perlin_golden() {
             let golden = Golden::new(Path::new("noise/improved_perlin.png"));
             let perlin = ImprovedPerlin::seed_from_u64(12345)
-                .scale([15.0; 2])
+                .scale([10.0; 2])
                 .map(|d| Hsl::<encoding::Srgb, f32>::new(RgbHue::new(176.), 0.19, (d + 1.0) / 2.0))
                 .bound_to(Cuboid {
                     center: [0.0; 2],
