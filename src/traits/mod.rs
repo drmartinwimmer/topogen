@@ -8,6 +8,6 @@ mod shape;
 pub use bound::Bounded;
 pub use by_ref::ByRef;
 pub use center::Center;
-pub use euclidean::{Coordinate, Euclidean, EuclideanVec};
+pub use euclidean::{Coordinate, Euclidean, EuclideanVec, EuclideanVecFloat, WrapToU8};
 pub use generator::Generator;
 pub use shape::Shape;

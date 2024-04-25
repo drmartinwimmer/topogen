@@ -25,7 +25,9 @@ impl<const D: usize> Generator<[u8; D]> for PermutationTable {
     type Output = u8;
 
     fn generate(&self, point: [u8; D]) -> Self::Output {
-        point.iter().fold(0, |acc, c| acc ^ self.table[*c as usize])
+        point
+            .iter()
+            .fold(0, |acc, c| self.table[acc.wrapping_add(*c) as usize])
     }
 }
 
@@ -46,5 +48,12 @@ mod tests {
         for (i, o) in output.iter().enumerate() {
             assert_eq!(*o, i as u8);
         }
+    }
+
+    #[test]
+    fn permutation_table_dimensions_are_independent() {
+        let pt = PermutationTable::seed_from_u64(12);
+        assert_ne!(pt.generate([255, 254]), pt.generate([254, 255]));
+        assert_ne!(pt.generate([3, 8]), pt.generate([8, 3]));
     }
 }

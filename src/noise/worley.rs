@@ -1,14 +1,12 @@
-use std::fmt::Debug;
-
-use num_traits::{Float, One, Zero};
-use rand::{distributions::uniform::SampleUniform, Rng, SeedableRng};
-use rand_pcg::Pcg32;
-
 use crate::{
     ops::CenterDistanceMap,
     shapes::Point,
-    traits::{Center, Coordinate, Euclidean, Generator},
+    traits::{Center, Coordinate, Euclidean, EuclideanVec, EuclideanVecFloat, Generator, WrapToU8},
 };
+use num_traits::{Float, One, Zero};
+use rand::{distributions::uniform::SampleUniform, Rng, SeedableRng};
+use rand_pcg::Pcg32;
+use std::fmt::Debug;
 
 use super::PermutationTable;
 
@@ -109,22 +107,6 @@ where
 
 impl<G, T, const D: usize> Euclidean<T, D> for Worley<G, T, D> where T: Coordinate {}
 
-trait WrapToU8 {
-    fn wrap_to_u8(self) -> u8;
-}
-
-impl WrapToU8 for f32 {
-    fn wrap_to_u8(self) -> u8 {
-        self.rem_euclid(256.0) as u8
-    }
-}
-
-impl WrapToU8 for f64 {
-    fn wrap_to_u8(self) -> u8 {
-        self.rem_euclid(256.0) as u8
-    }
-}
-
 impl<G, T, const D: usize> Generator<[T; D]> for Worley<G, T, D>
 where
     G: Generator<[T; D]>,
@@ -134,22 +116,9 @@ where
     type Output = G::Output;
 
     fn generate(&self, mut point: [T; D]) -> Self::Output {
-        let mut cell = point;
-        cell.iter_mut()
-            .zip(point)
-            .zip(self.cell_size)
-            .for_each(|((i, p), s)| *i = (p / s).floor());
-        let mut cell_u8 = [0u8; D];
-        cell_u8
-            .iter_mut()
-            .zip(cell)
-            .for_each(|(c, p)| *c = p.wrap_to_u8());
-
-        point
-            .iter_mut()
-            .zip(cell)
-            .zip(self.cell_size)
-            .for_each(|((p, c), s)| *p -= c * s);
+        let cell = point.element_div(self.cell_size).floor();
+        let cell_u8 = cell.wrap_to_u8();
+        point.sub_assign(cell.element_mul(self.cell_size));
         self.get_combined_distance_for_cell(cell_u8, point)
     }
 }
