@@ -1,5 +1,6 @@
 mod bitmap;
 mod bound_to;
+mod clamp;
 mod distance_map;
 mod fbm;
 mod map;
@@ -11,6 +12,7 @@ mod with_bounding_box;
 
 pub use bitmap::Bitmap;
 pub use bound_to::BoundTo;
+pub use clamp::Clamp;
 pub use distance_map::{CenterDistanceMap, DistanceMap};
 pub use fbm::Fbm;
 pub use map::{Map, MapInput};

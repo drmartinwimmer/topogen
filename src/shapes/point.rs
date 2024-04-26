@@ -10,6 +10,17 @@ impl<T, const D: usize> Point<T, D> {
     }
 }
 
+impl<T, const D: usize> Default for Point<T, D>
+where
+    T: Coordinate + num_traits::Zero,
+{
+    fn default() -> Self {
+        Self {
+            coordinates: [T::zero(); D],
+        }
+    }
+}
+
 impl<T, const D: usize> Center<T, D> for Point<T, D>
 where
     T: Coordinate,
