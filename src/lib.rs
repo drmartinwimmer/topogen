@@ -1,3 +1,5 @@
+extern crate generative_map_derive;
+
 pub mod core;
 #[cfg(feature = "image")]
 pub mod image;
