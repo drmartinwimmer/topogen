@@ -7,6 +7,12 @@ pub struct FixedGradientTable<O: Float, const D: usize> {
     _output: PhantomData<[O; D]>,
 }
 
+impl<O: Float, const D: usize> Default for FixedGradientTable<O, D> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<O: Float, const D: usize> FixedGradientTable<O, D> {
     pub fn new() -> Self {
         Self {

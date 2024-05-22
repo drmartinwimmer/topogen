@@ -82,17 +82,7 @@ impl<T: Coordinate + Float + WrapToU8, const D: usize, G: GradientTable<T, D>> P
         let a = self.get_corner_value_d(corner, point, d + 1, interpolate);
         corner[d] += T::one();
         let b = self.get_corner_value_d(corner, point, d + 1, interpolate);
-        let i = interpolate(a, b, point[d] + T::one() - corner[d]);
-        // if d == 0 {
-        //     println!(
-        //         "Interpolate: {} {} {} -> {}",
-        //         a,
-        //         b,
-        //         point[d] + T::one() - corner[d],
-        //         i
-        //     );
-        // }
-        i
+        interpolate(a, b, point[d] + T::one() - corner[d])
     }
 
     pub fn generate(&self, point: [T; D], interpolate: fn(T, T, T) -> T) -> T {
