@@ -1,9 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{
-    parse_quote, punctuated::Punctuated, token::Comma, Data, DeriveInput, Field, GenericParam,
-    Generics, WherePredicate,
-};
+use syn::{parse_quote, Data, DeriveInput, Field, GenericParam, Generics, WherePredicate};
 
 pub fn euclidean(input: DeriveInput) -> TokenStream {
     let name = &input.ident;
@@ -20,7 +17,7 @@ pub fn euclidean(input: DeriveInput) -> TokenStream {
     );
     let where_clause = &generics.where_clause;
     quote! {
-        impl #generics Euclidean<EuclideanCoordinate, EuclideanDim> for #name <#forward_generics>
+        impl #generics Euclidean<EuclideanCoordinate, EuclideanDim> for #name #forward_generics
         #where_clause
         {
         }
@@ -38,23 +35,27 @@ fn find_wrapped(input: &DeriveInput) -> Option<&Field> {
     None
 }
 
-fn create_forward_generics(input: &DeriveInput) -> Punctuated<GenericParam, Comma> {
-    let mut forward_generics = Punctuated::new();
+fn create_forward_generics(input: &DeriveInput) -> Generics {
+    let mut forward_generics = Generics::default();
     for param in input.generics.params.iter() {
         match param {
             syn::GenericParam::Type(ty) => {
                 let ident = &ty.ident;
-                forward_generics.push(parse_quote!(#ident))
+                forward_generics.params.push(parse_quote!(#ident))
             }
             syn::GenericParam::Const(ty) => {
                 let ident = &ty.ident;
-                forward_generics.push(parse_quote!(#ident))
+                forward_generics.params.push(parse_quote!(#ident))
             }
             syn::GenericParam::Lifetime(ty) => {
                 let ident = &ty.lifetime;
-                forward_generics.push(parse_quote!(#ident))
+                forward_generics.params.push(parse_quote!(#ident))
             }
         }
+    }
+    if !forward_generics.params.is_empty() {
+        forward_generics.lt_token = Some(Default::default());
+        forward_generics.gt_token = Some(Default::default());
     }
     forward_generics
 }
@@ -69,13 +70,9 @@ fn expand_generics(
         generics.params.push(generic_param.clone());
     }
     if !where_clauses.is_empty() {
-        match &mut generics.where_clause {
-            Some(where_clause) => {
-                for clause in where_clauses {
-                    where_clause.predicates.push(clause.clone());
-                }
-            }
-            None => generics.where_clause = parse_quote!(where #(#where_clauses),*),
+        let where_clause = generics.make_where_clause();
+        for clause in where_clauses {
+            where_clause.predicates.push(clause.clone());
         }
     }
     generics
@@ -88,7 +85,7 @@ mod tests {
     use syn::parse_quote;
 
     #[test]
-    fn euclidean_works() {
+    fn euclidean_works_with_generics() {
         let input = parse_quote! {
             #[derive(Euclidean)]
             pub struct Hello<G, T, const D: usize>
@@ -107,6 +104,27 @@ mod tests {
                 G: Generator<[T; D]> + Euclidean<T, D>,
                 T: Coordinate,
                 G: Euclidean<EuclideanCoordinate, EuclideanDim>
+            {
+            }
+        };
+        let output = euclidean(input);
+        assert_eq!(expected.to_string(), output.to_string());
+    }
+
+    #[test]
+    fn euclidean_works_without_generics() {
+        let input = parse_quote! {
+            #[derive(Euclidean)]
+            pub struct Hello {
+                #[wrap]
+                generator: Point<f64, 2>,
+            }
+        };
+
+        let expected = quote! {
+            impl<EuclideanCoordinate: Coordinate, const EuclideanDim: usize> Euclidean<EuclideanCoordinate, EuclideanDim> for Hello
+            where
+                Point<f64, 2>: Euclidean<EuclideanCoordinate, EuclideanDim>
             {
             }
         };
