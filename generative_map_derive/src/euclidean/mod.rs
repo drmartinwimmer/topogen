@@ -2,45 +2,23 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
     parse_quote, punctuated::Punctuated, token::Comma, Data, DeriveInput, Field, GenericParam,
+    Generics, WherePredicate,
 };
 
 pub fn euclidean(input: DeriveInput) -> TokenStream {
     let name = &input.ident;
     let wrapped = find_wrapped(&input).expect("Failed to find a field with the #[wrap] attribute");
     let wrapped_ty = &wrapped.ty;
-    let mut generics = input.generics.clone();
-    generics
-        .params
-        .push(parse_quote!(EuclideanCoordinate: Coordinate));
-    generics
-        .params
-        .push(parse_quote!(const EuclideanDim: usize));
-    let where_clause = match input.generics.where_clause.clone() {
-        Some(mut where_clause) => {
-            where_clause
-                .predicates
-                .push(parse_quote!(#wrapped_ty: Euclidean<EuclideanCoordinate, EuclideanDim>));
-            where_clause
-        }
-        None => parse_quote!(where #wrapped_ty: Euclidean<EuclideanCoordinate, EuclideanDim>),
-    };
-    let mut forward_generics: Punctuated<GenericParam, Comma> = Punctuated::new();
-    for param in input.generics.params.iter() {
-        match param {
-            syn::GenericParam::Type(ty) => {
-                let ident = &ty.ident;
-                forward_generics.push(parse_quote!(#ident))
-            }
-            syn::GenericParam::Const(ty) => {
-                let ident = &ty.ident;
-                forward_generics.push(parse_quote!(#ident))
-            }
-            syn::GenericParam::Lifetime(ty) => {
-                let ident = &ty.lifetime;
-                forward_generics.push(parse_quote!(#ident))
-            }
-        }
-    }
+    let forward_generics = create_forward_generics(&input);
+    let generics = expand_generics(
+        &input,
+        &[
+            parse_quote!(EuclideanCoordinate: Coordinate),
+            parse_quote!(const EuclideanDim: usize),
+        ],
+        &[parse_quote!(#wrapped_ty: Euclidean<EuclideanCoordinate, EuclideanDim>)],
+    );
+    let where_clause = &generics.where_clause;
     quote! {
         impl #generics Euclidean<EuclideanCoordinate, EuclideanDim> for #name <#forward_generics>
         #where_clause
@@ -60,9 +38,48 @@ fn find_wrapped(input: &DeriveInput) -> Option<&Field> {
     None
 }
 
-// fn find_where_clause(token: Span, input: &DeriveInput) -> Option<WhereClause> {
+fn create_forward_generics(input: &DeriveInput) -> Punctuated<GenericParam, Comma> {
+    let mut forward_generics = Punctuated::new();
+    for param in input.generics.params.iter() {
+        match param {
+            syn::GenericParam::Type(ty) => {
+                let ident = &ty.ident;
+                forward_generics.push(parse_quote!(#ident))
+            }
+            syn::GenericParam::Const(ty) => {
+                let ident = &ty.ident;
+                forward_generics.push(parse_quote!(#ident))
+            }
+            syn::GenericParam::Lifetime(ty) => {
+                let ident = &ty.lifetime;
+                forward_generics.push(parse_quote!(#ident))
+            }
+        }
+    }
+    forward_generics
+}
 
-// }
+fn expand_generics(
+    input: &DeriveInput,
+    generic_params: &[GenericParam],
+    where_clauses: &[WherePredicate],
+) -> Generics {
+    let mut generics = input.generics.clone();
+    for generic_param in generic_params {
+        generics.params.push(generic_param.clone());
+    }
+    if !where_clauses.is_empty() {
+        match &mut generics.where_clause {
+            Some(where_clause) => {
+                for clause in where_clauses {
+                    where_clause.predicates.push(clause.clone());
+                }
+            }
+            None => generics.where_clause = parse_quote!(where #(#where_clauses),*),
+        }
+    }
+    generics
+}
 
 #[cfg(test)]
 mod tests {
