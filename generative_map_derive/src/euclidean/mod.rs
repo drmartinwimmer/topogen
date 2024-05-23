@@ -1,15 +1,49 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Data, DeriveInput, Field};
+use syn::{
+    parse_quote, punctuated::Punctuated, token::Comma, Data, DeriveInput, Field, GenericParam,
+};
 
 pub fn euclidean(input: DeriveInput) -> TokenStream {
     let name = &input.ident;
     let wrapped = find_wrapped(&input).expect("Failed to find a field with the #[wrap] attribute");
+    let wrapped_ty = &wrapped.ty;
+    let mut generics = input.generics.clone();
+    generics
+        .params
+        .push(parse_quote!(EuclideanCoordinate: Coordinate));
+    generics
+        .params
+        .push(parse_quote!(const EuclideanDim: usize));
+    let where_clause = match input.generics.where_clause.clone() {
+        Some(mut where_clause) => {
+            where_clause
+                .predicates
+                .push(parse_quote!(#wrapped_ty: Euclidean<EuclideanCoordinate, EuclideanDim>));
+            where_clause
+        }
+        None => parse_quote!(where #wrapped_ty: Euclidean<EuclideanCoordinate, EuclideanDim>),
+    };
+    let mut forward_generics: Punctuated<GenericParam, Comma> = Punctuated::new();
+    for param in input.generics.params.iter() {
+        match param {
+            syn::GenericParam::Type(ty) => {
+                let ident = &ty.ident;
+                forward_generics.push(parse_quote!(#ident))
+            }
+            syn::GenericParam::Const(ty) => {
+                let ident = &ty.ident;
+                forward_generics.push(parse_quote!(#ident))
+            }
+            syn::GenericParam::Lifetime(ty) => {
+                let ident = &ty.lifetime;
+                forward_generics.push(parse_quote!(#ident))
+            }
+        }
+    }
     quote! {
-        impl<W, T, const D: usize> Euclidean<T, D> for #name<W, T, D>
-        where
-            W: Euclidean<T, D>,
-            T: Coordinate,
+        impl #generics Euclidean<EuclideanCoordinate, EuclideanDim> for #name <#forward_generics>
+        #where_clause
         {
         }
     }
@@ -51,10 +85,11 @@ mod tests {
         };
 
         let expected = quote! {
-            impl<W, T, const D: usize> Euclidean<T, D> for Hello<W, T, D>
+            impl<G, T, const D: usize, EuclideanCoordinate: Coordinate, const EuclideanDim: usize> Euclidean<EuclideanCoordinate, EuclideanDim> for Hello<G, T, D>
             where
-                W: Euclidean<T, D>,
+                G: Generator<[T; D]> + Euclidean<T, D>,
                 T: Coordinate,
+                G: Euclidean<EuclideanCoordinate, EuclideanDim>
             {
             }
         };
