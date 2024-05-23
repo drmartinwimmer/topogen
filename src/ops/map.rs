@@ -3,8 +3,9 @@ use crate::{
     traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Euclidean)]
 pub struct Map<G, F> {
+    #[wrap]
     generator: G,
     mapper: F,
 }
@@ -25,13 +26,6 @@ where
     fn generate(&self, input: I) -> Self::Output {
         (self.mapper)(self.generator.generate(input))
     }
-}
-
-impl<G, F, T, const D: usize> Euclidean<T, D> for Map<G, F>
-where
-    T: Coordinate,
-    G: Euclidean<T, D>,
-{
 }
 
 impl<G, F, T, const D: usize> Bounded<T, D> for Map<G, F>

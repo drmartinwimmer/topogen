@@ -1,7 +1,8 @@
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator};
 
-#[derive(Debug)]
+#[derive(Debug, Euclidean)]
 pub struct Scale<E, T, const D: usize> {
+    #[wrap]
     wrapped: E,
     scale: [T; D],
 }
@@ -14,13 +15,6 @@ where
     pub fn new(wrapped: E, scale: [T; D]) -> Self {
         Self { wrapped, scale }
     }
-}
-
-impl<E, T, const D: usize> Euclidean<T, D> for Scale<E, T, D>
-where
-    E: Euclidean<T, D>,
-    T: Coordinate,
-{
 }
 
 impl<B, T, const D: usize> Bounded<T, D> for Scale<B, T, D>

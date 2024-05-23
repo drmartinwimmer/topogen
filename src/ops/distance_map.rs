@@ -1,9 +1,10 @@
 use crate::traits::{Center, Coordinate, Euclidean, Generator, Shape};
 use std::marker::PhantomData;
 
-#[derive(Debug)]
+#[derive(Debug, Euclidean)]
 pub struct DistanceMap<S, T, const D: usize> {
     i: PhantomData<[T; D]>,
+    #[wrap]
     pub shape: S,
 }
 
@@ -26,11 +27,6 @@ where
     fn generate(&self, input: [T; D]) -> Self::Output {
         self.shape.distance(input)
     }
-}
-
-impl<E, T: Coordinate, const D: usize> Euclidean<T, D> for DistanceMap<E, T, D> where
-    E: Euclidean<T, D>
-{
 }
 
 impl<G, T, const D: usize> Center<T, D> for DistanceMap<G, T, D>

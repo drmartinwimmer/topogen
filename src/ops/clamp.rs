@@ -1,10 +1,11 @@
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator};
 
-#[derive(Debug)]
+#[derive(Debug, Euclidean)]
 pub struct Clamp<G, I>
 where
     G: Generator<I>,
 {
+    #[wrap]
     gen: G,
     min: G::Output,
     max: G::Output,
@@ -36,13 +37,6 @@ where
             out
         }
     }
-}
-
-impl<G, T, const D: usize> Euclidean<T, D> for Clamp<G, [T; D]>
-where
-    G: Euclidean<T, D> + Generator<[T; D]>,
-    T: Coordinate,
-{
 }
 
 impl<G, T, const D: usize> Bounded<T, D> for Clamp<G, [T; D]>

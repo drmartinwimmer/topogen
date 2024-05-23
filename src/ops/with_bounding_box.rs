@@ -3,11 +3,13 @@ use crate::{
     traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
 };
 
+#[derive(Euclidean)]
 pub struct WithBoundingBox<B, T, const D: usize>
 where
     B: Bounded<T, D>,
     T: Coordinate,
 {
+    #[wrap]
     bounded: B,
     bounding_box: BoundingBox<T, D>,
 }
@@ -23,13 +25,6 @@ where
             bounding_box,
         }
     }
-}
-
-impl<B, T, const D: usize> Euclidean<T, D> for WithBoundingBox<B, T, D>
-where
-    B: Bounded<T, D>,
-    T: Coordinate,
-{
 }
 
 impl<B, T, const D: usize> Bounded<T, D> for WithBoundingBox<B, T, D>

@@ -5,6 +5,7 @@ use crate::{
     traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
 };
 
+#[derive(Euclidean)]
 pub struct BoundTo<W, B, T, const D: usize>
 where
     W: Euclidean<T, D>,
@@ -12,6 +13,7 @@ where
     T: Coordinate,
 {
     t: PhantomData<T>,
+    #[wrap]
     wrapped: W,
     bound_to: B,
 }
@@ -29,14 +31,6 @@ where
             bound_to,
         }
     }
-}
-
-impl<W, B, T, const D: usize> Euclidean<T, D> for BoundTo<W, B, T, D>
-where
-    W: Euclidean<T, D>,
-    B: Bounded<T, D>,
-    T: Coordinate,
-{
 }
 
 impl<W, B, T, const D: usize> Bounded<T, D> for BoundTo<W, B, T, D>

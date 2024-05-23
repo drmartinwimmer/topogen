@@ -1,8 +1,8 @@
+use super::{Bounded, Generator};
+use crate::ops::{BoundTo, Fbm, Scale, Translate};
 use num_traits::Float;
 
-use crate::ops::{BoundTo, Fbm, Scale, Translate};
-
-use super::{Bounded, Generator};
+pub use generative_map_derive::Euclidean;
 
 pub trait Coordinate:
     Copy

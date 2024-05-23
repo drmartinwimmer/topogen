@@ -1,9 +1,10 @@
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 use std::marker::PhantomData;
 
-#[derive(Debug)]
+#[derive(Debug, Euclidean)]
 pub struct Bitmap<G, T, const D: usize> {
     i: PhantomData<[T; D]>,
+    #[wrap]
     pub generator: G,
 }
 
@@ -27,8 +28,6 @@ where
         self.generator.within(input)
     }
 }
-
-impl<T: Coordinate, G, const D: usize> Euclidean<T, D> for Bitmap<G, T, D> where G: Bounded<T, D> {}
 
 impl<T, G, const D: usize> Bounded<T, D> for Bitmap<G, T, D>
 where
