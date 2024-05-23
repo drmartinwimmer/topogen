@@ -18,6 +18,7 @@ struct Perlin<T: Coordinate + Float, const D: usize, G: GradientTable<T, D>> {
     _output: PhantomData<T>,
 }
 
+#[allow(dead_code)]
 fn interpolate_smoothstep<T: Coordinate + Float>(a: T, b: T, x: T) -> T {
     let two = T::one() + T::one();
     let three = two + T::one();
