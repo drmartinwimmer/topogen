@@ -1,7 +1,7 @@
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 use std::marker::PhantomData;
 
-#[derive(Debug, Euclidean)]
+#[derive(Debug, Euclidean, Center)]
 pub struct Bitmap<G, T, const D: usize> {
     i: PhantomData<[T; D]>,
     #[wrap]
@@ -48,16 +48,6 @@ where
 
     fn bounding_box(&self) -> crate::shapes::BoundingBox<T, D> {
         self.generator.bounding_box()
-    }
-}
-
-impl<G, T, const D: usize> Center<T, D> for Bitmap<G, T, D>
-where
-    T: Coordinate,
-    G: Bounded<T, D> + Center<T, D>,
-{
-    fn center(&self) -> [T; D] {
-        self.generator.center()
     }
 }
 

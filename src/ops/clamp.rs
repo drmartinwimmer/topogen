@@ -1,6 +1,6 @@
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator};
 
-#[derive(Debug, Euclidean)]
+#[derive(Debug, Euclidean, Center)]
 pub struct Clamp<G, I>
 where
     G: Generator<I>,
@@ -50,15 +50,5 @@ where
 
     fn bounding_box(&self) -> crate::shapes::BoundingBox<T, D> {
         self.gen.bounding_box()
-    }
-}
-
-impl<G, T, const D: usize> Center<T, D> for Clamp<G, [T; D]>
-where
-    G: Center<T, D> + Generator<[T; D]>,
-    T: Coordinate,
-{
-    fn center(&self) -> [T; D] {
-        self.gen.center()
     }
 }

@@ -3,7 +3,7 @@ use crate::{
     traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
 };
 
-#[derive(Debug, Euclidean)]
+#[derive(Debug, Euclidean, Center)]
 pub struct Map<G, F> {
     #[wrap]
     generator: G,
@@ -40,17 +40,6 @@ where
 
     fn bounding_box(&self) -> BoundingBox<T, D> {
         self.generator.bounding_box()
-    }
-}
-
-impl<G, F, T, const D: usize> Center<T, D> for Map<G, F>
-where
-    T: Coordinate,
-    G: Center<T, D>,
-    F: Clone,
-{
-    fn center(&self) -> [T; D] {
-        self.generator.center()
     }
 }
 

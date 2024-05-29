@@ -2,6 +2,8 @@ use super::{Coordinate, Euclidean};
 use crate::core::Sin;
 use crate::ops::CenterDistanceMap;
 
+pub use generative_map_derive::Center;
+
 pub trait Center<T: Coordinate, const D: usize>: Euclidean<T, D> {
     fn center(&self) -> [T; D];
 

@@ -1,7 +1,7 @@
 use crate::traits::{Center, Coordinate, Euclidean, Generator, Shape};
 use std::marker::PhantomData;
 
-#[derive(Debug, Euclidean)]
+#[derive(Debug, Euclidean, Center)]
 pub struct DistanceMap<S, T, const D: usize> {
     i: PhantomData<[T; D]>,
     #[wrap]
@@ -26,16 +26,6 @@ where
 
     fn generate(&self, input: [T; D]) -> Self::Output {
         self.shape.distance(input)
-    }
-}
-
-impl<G, T, const D: usize> Center<T, D> for DistanceMap<G, T, D>
-where
-    T: Coordinate,
-    G: Center<T, D>,
-{
-    fn center(&self) -> [T; D] {
-        self.shape.center()
     }
 }
 

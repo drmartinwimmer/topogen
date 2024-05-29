@@ -1,3 +1,4 @@
+mod center;
 mod euclidean;
 mod helpers;
 
@@ -8,4 +9,10 @@ use syn::parse_macro_input;
 pub fn euclidean(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input);
     euclidean::euclidean(input).into()
+}
+
+#[proc_macro_derive(Center, attributes(wrap))]
+pub fn center(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input);
+    center::center(input).into()
 }

@@ -3,7 +3,7 @@ use crate::{
     traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
 };
 
-#[derive(Euclidean)]
+#[derive(Euclidean, Center)]
 pub struct WithBoundingBox<B, T, const D: usize>
 where
     B: Bounded<T, D>,
@@ -38,16 +38,6 @@ where
 
     fn within(&self, point: [T; D]) -> bool {
         self.bounding_box.within(point) && self.bounded.within(point)
-    }
-}
-
-impl<C, T, const D: usize> Center<T, D> for WithBoundingBox<C, T, D>
-where
-    C: Center<T, D> + Bounded<T, D>,
-    T: Coordinate,
-{
-    fn center(&self) -> [T; D] {
-        self.bounded.center()
     }
 }
 

@@ -5,7 +5,7 @@ use crate::{
     traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
 };
 
-#[derive(Euclidean)]
+#[derive(Euclidean, Center)]
 pub struct BoundTo<W, B, T, const D: usize>
 where
     W: Euclidean<T, D>,
@@ -45,17 +45,6 @@ where
 
     fn within(&self, point: [T; D]) -> bool {
         self.bound_to.within(point)
-    }
-}
-
-impl<C, B, T, const D: usize> Center<T, D> for BoundTo<C, B, T, D>
-where
-    C: Center<T, D>,
-    B: Bounded<T, D>,
-    T: Coordinate,
-{
-    fn center(&self) -> [T; D] {
-        self.wrapped.center()
     }
 }
 
