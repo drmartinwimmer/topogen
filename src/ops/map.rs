@@ -1,7 +1,4 @@
-use crate::{
-    shapes::BoundingBox,
-    traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
-};
+use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 
 #[derive(Debug, Euclidean, Center, Bounded, Shape)]
 pub struct Map<G, F> {
