@@ -1,7 +1,7 @@
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 use std::marker::PhantomData;
 
-#[derive(Debug, Euclidean, Center)]
+#[derive(Debug, Euclidean, Bounded, Center, Shape)]
 pub struct Bitmap<G, T, const D: usize> {
     i: PhantomData<[T; D]>,
     #[wrap]
@@ -26,40 +26,5 @@ where
 
     fn generate(&self, input: [T; D]) -> Self::Output {
         self.generator.within(input)
-    }
-}
-
-impl<T, G, const D: usize> Bounded<T, D> for Bitmap<G, T, D>
-where
-    T: Coordinate,
-    G: Bounded<T, D>,
-{
-    fn within(&self, input: [T; D]) -> bool {
-        self.generator.within(input)
-    }
-
-    // fn intersect(self, other: Self) -> Self {
-    //     self.generator.intersect(other.generator).bitmap()
-    // }
-
-    // fn sub(self, other: Self) -> Self {
-    //     self.generator.sub(other.generator).bitmap()
-    // }
-
-    fn bounding_box(&self) -> crate::shapes::BoundingBox<T, D> {
-        self.generator.bounding_box()
-    }
-}
-
-impl<G, T, const D: usize> Shape<T, D> for Bitmap<G, T, D>
-where
-    T: Coordinate,
-    G: Shape<T, D>,
-{
-    fn distance(&self, point: [T; D]) -> T
-    where
-        T: num_traits::Float,
-    {
-        self.generator.distance(point)
     }
 }

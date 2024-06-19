@@ -1,11 +1,7 @@
+use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 use std::marker::PhantomData;
 
-use crate::{
-    shapes::BoundingBox,
-    traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
-};
-
-#[derive(Euclidean, Center)]
+#[derive(Euclidean, Center, Bounded, Shape)]
 pub struct BoundTo<W, B, T, const D: usize>
 where
     W: Euclidean<T, D>,
@@ -30,35 +26,6 @@ where
             wrapped,
             bound_to,
         }
-    }
-}
-
-impl<W, B, T, const D: usize> Bounded<T, D> for BoundTo<W, B, T, D>
-where
-    W: Euclidean<T, D>,
-    B: Bounded<T, D>,
-    T: Coordinate,
-{
-    fn bounding_box(&self) -> BoundingBox<T, D> {
-        self.bound_to.bounding_box()
-    }
-
-    fn within(&self, point: [T; D]) -> bool {
-        self.bound_to.within(point)
-    }
-}
-
-impl<S, B, T, const D: usize> Shape<T, D> for BoundTo<S, B, T, D>
-where
-    S: Shape<T, D>,
-    B: Bounded<T, D>,
-    T: Coordinate,
-{
-    fn distance(&self, point: [T; D]) -> T
-    where
-        T: num_traits::Float,
-    {
-        self.wrapped.distance(point)
     }
 }
 

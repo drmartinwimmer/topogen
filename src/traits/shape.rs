@@ -1,6 +1,7 @@
+use super::{Bounded, Coordinate};
 use crate::ops::DistanceMap;
 
-use super::{Bounded, Coordinate};
+pub use generative_map_derive::Shape;
 
 pub trait Shape<T, const D: usize>: Bounded<T, D>
 where
