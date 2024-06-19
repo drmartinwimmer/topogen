@@ -26,7 +26,7 @@ pub fn bounded(input: DeriveInput) -> TokenStream {
                 self. #wrapped_id .within(input)
             }
 
-            fn bounding_box(&self) -> crate::shapes::BoundingBox<EuclideanCoordinate, EuclideanDim> {
+            fn bounding_box(&self) -> ::generative_map::shapes::BoundingBox<EuclideanCoordinate, EuclideanDim> {
                 self. #wrapped_id .bounding_box()
             }
         }

@@ -1,4 +1,5 @@
 extern crate generative_map_derive;
+extern crate self as generative_map;
 
 pub mod core;
 #[cfg(feature = "image")]
