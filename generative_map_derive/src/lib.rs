@@ -1,6 +1,7 @@
 mod bounded;
 mod center;
 mod euclidean;
+mod generator;
 mod helpers;
 mod shape;
 
@@ -29,4 +30,10 @@ pub fn bounded(input: TokenStream) -> TokenStream {
 pub fn shape(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input);
     shape::shape(input).into()
+}
+
+#[proc_macro_derive(Generator, attributes(wrap))]
+pub fn generator(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input);
+    generator::generator(input).into()
 }
