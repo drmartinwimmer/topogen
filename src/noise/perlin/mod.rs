@@ -92,7 +92,11 @@ impl<T: Coordinate + Float + WrapToU8, const D: usize, G: GradientTable<T, D>> P
     }
 }
 
-pub struct ImprovedPerlin<T: Coordinate + Float, const D: usize, G: GradientTable<T, D>> {
+pub struct ImprovedPerlin<
+    T: Coordinate + Float,
+    const D: usize,
+    G: GradientTable<T, D> = FixedGradientTable<T, D>,
+> {
     perlin: Perlin<T, D, G>,
 }
 
