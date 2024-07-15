@@ -22,8 +22,9 @@ thiserror = "1.0.57"
 tempfile = "3.10"
 
 [features]
+noise = ["dep:rand", "dep:rand_pcg"]
 image = ["dep:image"]
-noise = ["dep:noise", "dep:rand", "dep:rand_pcg"]
+noise_fn = ["dep:noise", "noise"]
 palette = ["image", "dep:palette"]
 
 [[example]]

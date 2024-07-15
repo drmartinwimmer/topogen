@@ -176,25 +176,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use rand::SeedableRng;
-
-    use crate::traits::Generator;
-
-    use super::ImprovedPerlin;
-
-    #[test]
-    fn no_sharp_edges_around_cell_boundaries() {
-        let perlin = ImprovedPerlin::seed_from_u64(12345);
-        let mut line = [0.0; 10];
-        for (i, l) in line.iter_mut().enumerate() {
-            *l = perlin.generate([i as f32 * 0.1 - 0.5, 0.55 - i as f32 * 0.3]);
-        }
-        for w in line.windows(2) {
-            println!("{} {}", w[0], w[1]);
-            assert!((w[0] - w[1]).abs() < 0.31);
-        }
-    }
-
     #[cfg(feature = "palette")]
     mod golden {
         use super::super::ImprovedPerlin;

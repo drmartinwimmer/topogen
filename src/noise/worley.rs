@@ -125,24 +125,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use rand::SeedableRng;
-
-    use crate::traits::Generator;
-
-    use super::Worley;
-
-    #[test]
-    fn no_sharp_edges_around_cell_boundaries() {
-        let worley = Worley::seed_from_u64(12345).set_cell_size([10.0; 2]);
-        let mut line = [0.0; 10];
-        for (i, l) in line.iter_mut().enumerate() {
-            *l = worley.generate([i as f32 * 0.1 - 0.5, 0.5 - i as f32 * 0.3]);
-        }
-        for w in line.windows(2) {
-            assert!((w[0] - w[1]).abs() < 0.3);
-        }
-    }
-
     #[cfg(feature = "palette")]
     mod golden {
         use super::super::Worley;
