@@ -281,7 +281,7 @@ dependencies = [
 
 [[package]]
 name = "generative_map"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "generative_map_derive",
  "image",

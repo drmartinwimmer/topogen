@@ -68,7 +68,7 @@ where
         }
     }
 
-    fn get_distance_for_cell(&self, cell: [u8; D], mut point: [T; D]) -> G::Output {
+    fn get_distance_for_cell(&self, cell: [u8; D], mut point: [T; D]) -> (G::Output, u8) {
         let index = self.permutation_table.generate(cell);
         let offsets = &self.offsets[index as usize];
         point
@@ -76,7 +76,7 @@ where
             .zip(offsets)
             .zip(self.cell_size)
             .for_each(|((p, o), s)| *p -= *o * s);
-        self.distance_gen.generate(point)
+        (self.distance_gen.generate(point), index)
     }
 
     fn get_combined_distance_for_cell_d(
@@ -84,7 +84,7 @@ where
         mut cell: [u8; D],
         mut point: [T; D],
         d: usize,
-    ) -> G::Output {
+    ) -> (G::Output, u8) {
         if d == D {
             return self.get_distance_for_cell(cell, point);
         }
@@ -97,10 +97,17 @@ where
         cell[d] = cell_d.wrapping_sub(1);
         point[d] = point_d + self.cell_size[d];
         let left = self.get_combined_distance_for_cell_d(cell, point, d + 1);
-        baseline.min(right).min(left)
+        let min = match left.0 < baseline.0 {
+            true => left,
+            false => baseline,
+        };
+        match right.0 < min.0 {
+            true => right,
+            false => min,
+        }
     }
 
-    fn get_combined_distance_for_cell(&self, cell: [u8; D], point: [T; D]) -> G::Output {
+    fn get_combined_distance_for_cell(&self, cell: [u8; D], point: [T; D]) -> (G::Output, u8) {
         self.get_combined_distance_for_cell_d(cell, point, 0)
     }
 }
@@ -113,7 +120,7 @@ where
     G::Output: Float + Debug,
     T: Coordinate + Zero + SampleUniform + Float + WrapToU8,
 {
-    type Output = G::Output;
+    type Output = (G::Output, u8);
 
     fn generate(&self, mut point: [T; D]) -> Self::Output {
         let cell = point.element_div(self.cell_size).floor();
@@ -143,7 +150,7 @@ mod tests {
             let golden = Golden::new(Path::new("noise/worley.png"));
             let worley = Worley::seed_from_u64(12345)
                 .set_cell_size([50.0; 2])
-                .map(|d| Hsl::<encoding::Srgb, f32>::new(RgbHue::new(176.), 0.19, d / 100.0))
+                .map(|(d, _)| Hsl::<encoding::Srgb, f32>::new(RgbHue::new(176.), 0.19, d / 100.0))
                 .bound_to(Cuboid {
                     center: [0.0; 2],
                     extents: [300.0; 2],
