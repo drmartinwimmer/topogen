@@ -11,7 +11,7 @@ pub fn euclidean(input: DeriveInput) -> TokenStream {
     let generics = expand_generics(
         &input,
         &[
-            parse_quote!(EuclideanCoordinate: Coordinate),
+            parse_quote!(EuclideanCoordinate: generative_map::traits::Coordinate),
             parse_quote!(const EuclideanDim: usize),
         ],
         &[parse_quote!(#wrapped_ty: Euclidean<EuclideanCoordinate, EuclideanDim>)],
@@ -46,7 +46,7 @@ mod tests {
         };
 
         let expected = quote! {
-            impl<G, T, const D: usize, EuclideanCoordinate: Coordinate, const EuclideanDim: usize> Euclidean<EuclideanCoordinate, EuclideanDim> for Hello<G, T, D>
+            impl<G, T, const D: usize, EuclideanCoordinate: generative_map::traits::Coordinate, const EuclideanDim: usize> Euclidean<EuclideanCoordinate, EuclideanDim> for Hello<G, T, D>
             where
                 G: Generator<[T; D]> + Euclidean<T, D>,
                 T: Coordinate,
@@ -69,7 +69,7 @@ mod tests {
         };
 
         let expected = quote! {
-            impl<EuclideanCoordinate: Coordinate, const EuclideanDim: usize> Euclidean<EuclideanCoordinate, EuclideanDim> for Hello
+            impl<EuclideanCoordinate: generative_map::traits::Coordinate, const EuclideanDim: usize> Euclidean<EuclideanCoordinate, EuclideanDim> for Hello
             where
                 Point<f64, 2>: Euclidean<EuclideanCoordinate, EuclideanDim>
             {
