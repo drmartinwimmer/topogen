@@ -101,14 +101,15 @@ pub enum Error<T: std::fmt::Display> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Union};
+    use super::Union;
     use crate::{
         shapes::Cuboid,
         traits::{Bounded, Generator},
     };
+    use googletest::prelude::*;
 
-    #[test]
-    fn generator_union_works() -> Result<(), Error<i32>> {
+    #[googletest::test]
+    fn generator_union_works() -> Result<()> {
         let left_cube = Cuboid {
             center: [-2, 0, 0],
             ..Default::default()
@@ -119,9 +120,9 @@ mod tests {
         };
         let combined_bitmap =
             Union::new(vec![left_cube.bitmap(), right_cube.bitmap()], |a, b| a | b)?;
-        assert!(!combined_bitmap.generate([-1, 0, 0]));
-        assert!(!combined_bitmap.generate([0, 0, 0]));
-        assert!(!combined_bitmap.generate([1, 0, 0]));
+        expect_that!(combined_bitmap.generate([-1, 0, 0]), is_false());
+        expect_that!(combined_bitmap.generate([0, 0, 0]), is_false());
+        expect_that!(combined_bitmap.generate([1, 0, 0]), is_false());
         Ok(())
     }
 }

@@ -31,10 +31,11 @@ pub fn generator(input: DeriveInput) -> TokenStream {
 #[cfg(test)]
 mod tests {
     use super::generator;
+    use googletest::prelude::*;
     use quote::quote;
     use syn::parse_quote;
 
-    #[test]
+    #[googletest::test]
     fn generator_works_with_generics() {
         let input = parse_quote! {
             #[derive(Euclidean)]
@@ -63,6 +64,6 @@ mod tests {
             }
         };
         let output = generator(input);
-        assert_eq!(expected.to_string(), output.to_string());
+        expect_that!(output.to_string(), eq(&expected.to_string()));
     }
 }

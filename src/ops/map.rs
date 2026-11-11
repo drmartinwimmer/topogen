@@ -60,26 +60,27 @@ where
 mod tests {
     use crate::core::Constant;
     use crate::traits::{ByRef, Generator};
+    use googletest::prelude::*;
 
-    #[test]
+    #[googletest::test]
     fn map_by_value_works() {
-        let gen = Constant::new(1);
-        let mapped = gen.map(|x| x + 1);
-        assert_eq!(mapped.generate(0), 2);
+        let generator = Constant::new(1);
+        let mapped = generator.map(|x| x + 1);
+        expect_that!(mapped.generate(0), eq(2));
     }
 
-    #[test]
+    #[googletest::test]
     fn map_with_different_output_type_works() {
-        let gen = Constant::new(1);
-        let mapped = gen.map(|x| x as f32 / 2.0);
-        assert_eq!(mapped.generate(0), 0.5);
+        let generator = Constant::new(1_i16);
+        let mapped = generator.map(|x| f32::from(x) / 2.0);
+        expect_that!(mapped.generate(0), eq(0.5));
     }
 
-    #[test]
+    #[googletest::test]
     fn map_by_ref_works() {
-        let gen = Constant::new(1);
-        let mapped = gen.by_ref().map(|x| x + 1);
-        assert_eq!(mapped.generate(0), 2);
-        assert_eq!(gen.generate(0), 1);
+        let generator = Constant::new(1);
+        let mapped = generator.by_ref().map(|x| x + 1);
+        expect_that!(mapped.generate(0), eq(2));
+        expect_that!(generator.generate(0), eq(1));
     }
 }

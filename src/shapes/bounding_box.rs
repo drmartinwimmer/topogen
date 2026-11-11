@@ -255,35 +255,38 @@ pub enum Error<T: Display> {
 #[cfg(test)]
 mod tests {
     use super::BoundingBox;
+    use googletest::prelude::*;
 
-    #[test]
+    #[googletest::test]
     fn new_bound_works() {
         let bound = BoundingBox::new_offset([15, 15], [10, 10]);
-        assert!(bound.within([16, 16]));
-        assert!(bound.within([24, 24]));
-        assert!(!bound.within([25, 16]));
-        assert!(!bound.within([15, 25]));
-        assert!(!bound.within([15, 16]));
+        expect_that!(bound.within([16, 16]), is_true());
+        expect_that!(bound.within([24, 24]), is_true());
+        expect_that!(bound.within([25, 16]), is_false());
+        expect_that!(bound.within([15, 25]), is_false());
+        expect_that!(bound.within([15, 16]), is_false());
     }
 
-    #[test]
-    fn for_union_works() {
+    #[googletest::test]
+    fn for_union_works() -> Result<()> {
         let bound = BoundingBox::new_offset([15, 15], [10, 10]);
         let bound2 = BoundingBox::new_offset([10, 10], [10, 10]);
-        let union = bound.for_union(&bound2).unwrap();
-        assert!(union.within([11, 11]));
-        assert!(union.within([24, 24]));
-        assert!(!union.within([25, 15]));
-        assert!(!union.within([10, 15]));
+        let union = bound.for_union(&bound2)?;
+        expect_that!(union.within([11, 11]), is_true());
+        expect_that!(union.within([24, 24]), is_true());
+        expect_that!(union.within([25, 15]), is_false());
+        expect_that!(union.within([10, 15]), is_false());
+        Ok(())
     }
 
-    #[test]
-    fn for_intersection_works() {
+    #[googletest::test]
+    fn for_intersection_works() -> Result<()> {
         let bound = BoundingBox::new_offset([15, 15], [10, 10]);
         let bound2 = BoundingBox::new_offset([10, 10], [10, 10]);
-        let inter = bound.for_intersect(&bound2).unwrap();
-        assert!(!inter.within([11, 11]));
-        assert!(inter.within([16, 16]));
-        assert!(!inter.within([20, 19]));
+        let inter = bound.for_intersect(&bound2)?;
+        expect_that!(inter.within([11, 11]), is_false());
+        expect_that!(inter.within([16, 16]), is_true());
+        expect_that!(inter.within([20, 19]), is_false());
+        Ok(())
     }
 }

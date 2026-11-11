@@ -35,24 +35,25 @@ mod tests {
         shapes::{Point, Sphere},
         traits::{Bounded, Center},
     };
+    use googletest::prelude::*;
     use std::f32::consts::FRAC_PI_2;
 
-    #[test]
-    fn map_works() {
+    #[googletest::test]
+    fn maps_generator_output() {
         let sphere = Sphere::default().bitmap().map(|b: bool| !b);
-        assert!(!sphere.generate([0]));
-        assert!(sphere.generate([2]));
+        expect_that!(sphere.generate([0]), is_false());
+        expect_that!(sphere.generate([2]), is_true());
     }
 
-    #[test]
-    fn clamp_works() {
-        let gen = Point::default().center_sin();
-        assert_eq!(gen.generate([0.0]), 0.0);
-        assert_eq!(gen.generate([FRAC_PI_2]), 1.0);
-        assert_eq!(gen.generate([3.0 * FRAC_PI_2]), -1.0);
-        let clamped = gen.clamp(-0.5, 0.5);
-        assert_eq!(clamped.generate([0.0]), 0.0);
-        assert_eq!(clamped.generate([FRAC_PI_2]), 0.5);
-        assert_eq!(clamped.generate([3.0 * FRAC_PI_2]), -0.5);
+    #[googletest::test]
+    fn clamps_generator_output() {
+        let generator = Point::default().center_sin();
+        expect_that!(generator.generate([0.0]), eq(0.0));
+        expect_that!(generator.generate([FRAC_PI_2]), eq(1.0));
+        expect_that!(generator.generate([3.0 * FRAC_PI_2]), eq(-1.0));
+        let clamped = generator.clamp(-0.5, 0.5);
+        expect_that!(clamped.generate([0.0]), eq(0.0));
+        expect_that!(clamped.generate([FRAC_PI_2]), eq(0.5));
+        expect_that!(clamped.generate([3.0 * FRAC_PI_2]), eq(-0.5));
     }
 }

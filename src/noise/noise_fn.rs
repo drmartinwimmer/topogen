@@ -62,24 +62,32 @@ mod tests {
             testing::Golden,
             traits::{Euclidean, Generator},
         };
-        use ::palette::{encoding, Hsl, RgbHue};
+        use ::palette::{Hsl, RgbHue, encoding};
+        use googletest::prelude::*;
         use rand::SeedableRng;
         use std::path::Path;
 
-        #[test]
-        fn perlin_golden() {
+        #[googletest::test]
+        fn renders_perlin_golden_image() -> Result<()> {
             let golden = Golden::new(Path::new("noise/perlin_noise_fn.png"));
             let perlin = Noise::<noise::Perlin>::seed_from_u64(12345)
                 .scale([10.0; 2])
                 .map(|d: f64| {
-                    Hsl::<encoding::Srgb, f32>::new(RgbHue::new(176.), 0.19, (d as f32 + 1.0) / 2.0)
+                    // Palette HSL expects f32 channels while noise::NoiseFn outputs f64.
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        reason = "palette Hsl channels use f32 values"
+                    )]
+                    let lightness = (d as f32 + 1.0) / 2.0;
+                    Hsl::<encoding::Srgb, f32>::new(RgbHue::new(176.), 0.19, lightness)
                 })
                 .bound_to(Cuboid {
                     center: [0.0; 2],
                     extents: [300.0; 2],
                 });
-            perlin.save_image(golden.write_path(), [1.0; 2]).unwrap();
-            assert!(golden.is_identical());
+            perlin.save_image(golden.write_path(), [1.0; 2])?;
+            expect_that!(golden.is_identical(), is_true());
+            Ok(())
         }
     }
 }

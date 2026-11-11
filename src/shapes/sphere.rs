@@ -61,118 +61,119 @@ where
 mod tests {
     use super::Sphere;
     use crate::traits::{Bounded, Center, Generator, Shape};
+    use googletest::prelude::*;
 
-    #[test]
-    fn generates_sphere() {
+    #[googletest::test]
+    fn generates_sphere_bitmap() {
         let sphere: Sphere<f64, 2> = Sphere::default();
         let sphere = sphere.bitmap();
-        assert!(sphere.generate([0.9, 0.0]));
-        assert!(sphere.generate([0.7, 0.3]));
-        assert!(!sphere.generate([1.0, 0.3]));
-        assert!(!sphere.generate([0.9, 0.9]));
+        expect_that!(sphere.generate([0.9, 0.0]), is_true());
+        expect_that!(sphere.generate([0.7, 0.3]), is_true());
+        expect_that!(sphere.generate([1.0, 0.3]), is_false());
+        expect_that!(sphere.generate([0.9, 0.9]), is_false());
     }
 
-    #[test]
+    #[googletest::test]
     fn sphere_works_for_negatives() {
         let sphere: Sphere<f64, 3> = Sphere::default();
-        assert!(sphere.within([-0.7, -0.3, 0.0]));
-        assert!(!sphere.within([-1.0, 0.3, 0.0]));
+        expect_that!(sphere.within([-0.7, -0.3, 0.0]), is_true());
+        expect_that!(sphere.within([-1.0, 0.3, 0.0]), is_false());
     }
 
-    #[test]
+    #[googletest::test]
     fn sphere_works_across_dimensions() {
         let sphere: Sphere<f64, 1> = Sphere::default();
-        assert!(sphere.within([0.9]));
+        expect_that!(sphere.within([0.9]), is_true());
         let sphere: Sphere<f64, 4> = Sphere::default();
-        assert!(sphere.within([0.4, 0.3, 0.2, 0.1]));
+        expect_that!(sphere.within([0.4, 0.3, 0.2, 0.1]), is_true());
     }
 
-    #[test]
+    #[googletest::test]
     fn sphere_works_across_types() {
         let sphere: Sphere<i8, 1> = Sphere {
             radius: 2,
             ..Default::default()
         };
-        assert!(sphere.within([1]));
-        assert!(!sphere.within([2]));
+        expect_that!(sphere.within([1]), is_true());
+        expect_that!(sphere.within([2]), is_false());
         let sphere: Sphere<i64, 1> = Sphere::default();
-        assert!(sphere.within([0]));
+        expect_that!(sphere.within([0]), is_true());
     }
 
-    #[test]
-    fn sphere_scales() {
+    #[googletest::test]
+    fn scales_sphere_radius() {
         let mut sphere: Sphere<f64, 3> = Sphere {
             radius: 0.9,
             ..Default::default()
         };
-        assert!(!sphere.within([0.91, 0.0, 0.0]));
+        expect_that!(sphere.within([0.91, 0.0, 0.0]), is_false());
         sphere.radius = 3.0;
-        assert!(sphere.within([0.9, 0.0, 0.0]));
-        assert!(sphere.within([1.5, 1.5, 1.5]));
-        assert!(!sphere.within([2.0, 2.0, 2.0]));
+        expect_that!(sphere.within([0.9, 0.0, 0.0]), is_true());
+        expect_that!(sphere.within([1.5, 1.5, 1.5]), is_true());
+        expect_that!(sphere.within([2.0, 2.0, 2.0]), is_false());
     }
 
-    #[test]
-    fn sphere_moves() {
+    #[googletest::test]
+    fn moves_sphere_bounds() {
         let sphere: Sphere<f64, 2> = Sphere {
             center: [2.0, 2.0],
             ..Default::default()
         };
-        assert!(!sphere.within([0.0, 0.0]));
-        assert!(sphere.within([2.0, 2.0]));
-        assert!(sphere.within([1.01, 2.0]));
-        assert!(sphere.within([2.0, 2.99]));
-        assert!(!sphere.within([3.0, 3.0]));
+        expect_that!(sphere.within([0.0, 0.0]), is_false());
+        expect_that!(sphere.within([2.0, 2.0]), is_true());
+        expect_that!(sphere.within([1.01, 2.0]), is_true());
+        expect_that!(sphere.within([2.0, 2.99]), is_true());
+        expect_that!(sphere.within([3.0, 3.0]), is_false());
     }
 
-    #[test]
+    #[googletest::test]
     fn returns_sphere_center() {
         let center = [2.0, 2.0];
         let sphere: Sphere<f64, 2> = Sphere {
             center,
             ..Default::default()
         };
-        assert_eq!(center, sphere.center());
+        expect_that!(sphere.center(), eq(center));
     }
 
-    #[test]
+    #[googletest::test]
     fn returns_center_distance() {
         let sphere: Sphere<f64, 2> = Sphere::default();
-        assert_eq!(0.0, sphere.center_distance([0.0, 0.0]));
-        assert_eq!(2.0, sphere.center_distance([2.0, 0.0]));
-        assert_eq!(2.0, sphere.center_distance([0.0, 2.0]));
-        assert_eq!(5.0, sphere.center_distance([3.0, 4.0]));
+        expect_that!(sphere.center_distance([0.0, 0.0]), eq(0.0));
+        expect_that!(sphere.center_distance([2.0, 0.0]), eq(2.0));
+        expect_that!(sphere.center_distance([0.0, 2.0]), eq(2.0));
+        expect_that!(sphere.center_distance([3.0, 4.0]), eq(5.0));
     }
 
-    #[test]
-    fn returns_distance() {
+    #[googletest::test]
+    fn returns_sphere_distance() {
         let sphere: Sphere<f64, 2> = Sphere::default();
-        assert_eq!(0.0, sphere.distance([0.0, 0.0]));
-        assert_eq!(1.0, sphere.distance([2.0, 0.0]));
-        assert_eq!(1.0, sphere.distance([0.0, 2.0]));
-        assert_eq!(4.0, sphere.distance([3.0, 4.0]));
+        expect_that!(sphere.distance([0.0, 0.0]), eq(0.0));
+        expect_that!(sphere.distance([2.0, 0.0]), eq(1.0));
+        expect_that!(sphere.distance([0.0, 2.0]), eq(1.0));
+        expect_that!(sphere.distance([3.0, 4.0]), eq(4.0));
     }
 
-    #[test]
+    #[googletest::test]
     fn returns_distance_for_other_radius() {
         let sphere: Sphere<f64, 2> = Sphere {
             radius: 2.0,
             ..Default::default()
         };
-        assert_eq!(0.0, sphere.distance([0.0, 0.0]));
-        assert_eq!(0.0, sphere.distance([2.0, 0.0]));
-        assert_eq!(1.0, sphere.distance([0.0, 3.0]));
-        assert_eq!(3.0, sphere.distance([3.0, 4.0]));
+        expect_that!(sphere.distance([0.0, 0.0]), eq(0.0));
+        expect_that!(sphere.distance([2.0, 0.0]), eq(0.0));
+        expect_that!(sphere.distance([0.0, 3.0]), eq(1.0));
+        expect_that!(sphere.distance([3.0, 4.0]), eq(3.0));
     }
 
-    #[test]
+    #[googletest::test]
     fn returns_center_distance_for_other_center() {
         let sphere: Sphere<f64, 2> = Sphere {
             center: [3.0, 4.0],
             ..Default::default()
         };
-        assert_eq!(5.0, sphere.center_distance([0.0, 0.0]));
-        assert_eq!(0.0, sphere.center_distance([3.0, 4.0]));
-        assert_eq!(1.0, sphere.center_distance([4.0, 4.0]));
+        expect_that!(sphere.center_distance([0.0, 0.0]), eq(5.0));
+        expect_that!(sphere.center_distance([3.0, 4.0]), eq(0.0));
+        expect_that!(sphere.center_distance([4.0, 4.0]), eq(1.0));
     }
 }

@@ -79,116 +79,117 @@ where
 mod tests {
     use super::Cuboid;
     use crate::traits::{Bounded, Center, Generator, Shape};
+    use googletest::prelude::*;
 
-    #[test]
-    fn generates_cuboid() {
+    #[googletest::test]
+    fn generates_cuboid_bitmap() {
         let cuboid: Cuboid<f64, 2> = Cuboid::default();
         let cuboid = cuboid.bitmap();
-        assert!(cuboid.generate([0.99, 0.99]));
-        assert!(!cuboid.generate([0.99, 1.0]));
+        expect_that!(cuboid.generate([0.99, 0.99]), is_true());
+        expect_that!(cuboid.generate([0.99, 1.0]), is_false());
     }
 
-    #[test]
+    #[googletest::test]
     fn cuboid_works_for_negatives() {
         let cuboid: Cuboid<f64, 1> = Cuboid::default();
-        assert!(cuboid.within([-0.99]));
-        assert!(!cuboid.within([-1.0]));
+        expect_that!(cuboid.within([-0.99]), is_true());
+        expect_that!(cuboid.within([-1.0]), is_false());
     }
 
-    #[test]
+    #[googletest::test]
     fn cuboid_works_across_types() {
         let cuboid: Cuboid<i32, 1> = Cuboid {
             extents: [5_i32],
             ..Default::default()
         };
-        assert!(cuboid.within([4]));
-        assert!(!cuboid.within([5]));
+        expect_that!(cuboid.within([4]), is_true());
+        expect_that!(cuboid.within([5]), is_false());
     }
 
-    #[test]
+    #[googletest::test]
     fn unit_cuboid_works_across_dimensions() {
         let cuboid: Cuboid<i32, 8> = Cuboid {
             extents: [2_i32; 8],
             ..Default::default()
         };
-        assert!(cuboid.within([1; 8]));
+        expect_that!(cuboid.within([1; 8]), is_true());
     }
 
-    #[test]
-    fn cuboid_moves() {
+    #[googletest::test]
+    fn moves_cuboid_bounds() {
         let cuboid: Cuboid<i32, 2> = Cuboid {
             extents: [2, 2],
             center: [2, 2],
         };
-        assert!(!cuboid.within([0, 0]));
-        assert!(cuboid.within([1, 1]));
-        assert!(cuboid.within([2, 2]));
-        assert!(cuboid.within([3, 3]));
-        assert!(cuboid.within([1, 3]));
+        expect_that!(cuboid.within([0, 0]), is_false());
+        expect_that!(cuboid.within([1, 1]), is_true());
+        expect_that!(cuboid.within([2, 2]), is_true());
+        expect_that!(cuboid.within([3, 3]), is_true());
+        expect_that!(cuboid.within([1, 3]), is_true());
     }
 
-    #[test]
+    #[googletest::test]
     fn cuboid_works_with_distinct_sides() {
         let cuboid: Cuboid<i32, 3> = Cuboid {
             extents: [2, 3, 4],
             ..Default::default()
         };
-        assert!(cuboid.within([1, 2, 3]));
-        assert!(cuboid.within([-1, -2, -3]));
-        assert!(cuboid.within([-1, 2, -3]));
-        assert!(!cuboid.within([1, 2, 4]));
-        assert!(!cuboid.within([1, 3, 3]));
-        assert!(!cuboid.within([-2, -2, -3]));
+        expect_that!(cuboid.within([1, 2, 3]), is_true());
+        expect_that!(cuboid.within([-1, -2, -3]), is_true());
+        expect_that!(cuboid.within([-1, 2, -3]), is_true());
+        expect_that!(cuboid.within([1, 2, 4]), is_false());
+        expect_that!(cuboid.within([1, 3, 3]), is_false());
+        expect_that!(cuboid.within([-2, -2, -3]), is_false());
     }
 
-    #[test]
-    fn returns_center() {
+    #[googletest::test]
+    fn returns_cuboid_center() {
         let center = [2.0, 2.0];
         let cuboid: Cuboid<f64, 2> = Cuboid {
             center,
             ..Default::default()
         };
-        assert_eq!(center, cuboid.center());
+        expect_that!(cuboid.center(), eq(center));
     }
 
-    #[test]
+    #[googletest::test]
     fn returns_center_distance() {
         let cuboid: Cuboid<f64, 2> = Cuboid::default();
-        assert_eq!(0.0, cuboid.center_distance([0.0, 0.0]));
-        assert_eq!(2.0, cuboid.center_distance([2.0, 0.0]));
-        assert_eq!(2.0, cuboid.center_distance([0.0, 2.0]));
-        assert_eq!(5.0, cuboid.center_distance([3.0, 4.0]));
+        expect_that!(cuboid.center_distance([0.0, 0.0]), eq(0.0));
+        expect_that!(cuboid.center_distance([2.0, 0.0]), eq(2.0));
+        expect_that!(cuboid.center_distance([0.0, 2.0]), eq(2.0));
+        expect_that!(cuboid.center_distance([3.0, 4.0]), eq(5.0));
     }
 
-    #[test]
-    fn returns_distance() {
+    #[googletest::test]
+    fn returns_cuboid_distance() {
         let cuboid: Cuboid<f64, 2> = Cuboid::default();
-        assert_eq!(0.0, cuboid.distance([0.0, 0.0]));
-        assert_eq!(1.0, cuboid.distance([2.0, 0.0]));
-        assert_eq!(1.0, cuboid.distance([2.0, -0.2]));
-        assert_eq!(1.0, cuboid.distance([0.1, 2.0]));
-        assert_eq!(5.0, cuboid.distance([4.0, 5.0]));
+        expect_that!(cuboid.distance([0.0, 0.0]), eq(0.0));
+        expect_that!(cuboid.distance([2.0, 0.0]), eq(1.0));
+        expect_that!(cuboid.distance([2.0, -0.2]), eq(1.0));
+        expect_that!(cuboid.distance([0.1, 2.0]), eq(1.0));
+        expect_that!(cuboid.distance([4.0, 5.0]), eq(5.0));
     }
 
-    #[test]
+    #[googletest::test]
     fn returns_distance_for_other_sides() {
         let cuboid: Cuboid<f32, 3> = Cuboid {
             extents: [5.0, 10.0, 15.0],
             ..Default::default()
         };
-        assert_eq!(0.0, cuboid.distance([0.0, 0.0, 0.0]));
-        assert_eq!(0.0, cuboid.distance([1.0, 10.0, -15.0]));
-        assert_eq!(1.0, cuboid.distance([2.0, -10.0, 16.0]));
+        expect_that!(cuboid.distance([0.0, 0.0, 0.0]), eq(0.0));
+        expect_that!(cuboid.distance([1.0, 10.0, -15.0]), eq(0.0));
+        expect_that!(cuboid.distance([2.0, -10.0, 16.0]), eq(1.0));
     }
 
-    #[test]
+    #[googletest::test]
     fn returns_distance_for_other_center() {
         let cuboid: Cuboid<f64, 2> = Cuboid {
             center: [4.0, 5.0],
             ..Default::default()
         };
-        assert_eq!(5.0, cuboid.distance([0.0, 0.0]));
-        assert_eq!(0.0, cuboid.distance([4.0, 5.0]));
-        assert_eq!(1.0, cuboid.distance([5.0, 7.0]));
+        expect_that!(cuboid.distance([0.0, 0.0]), eq(5.0));
+        expect_that!(cuboid.distance([4.0, 5.0]), eq(0.0));
+        expect_that!(cuboid.distance([5.0, 7.0]), eq(1.0));
     }
 }
