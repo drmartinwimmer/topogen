@@ -1,18 +1,22 @@
-use rand::{seq::SliceRandom, SeedableRng};
-use rand_pcg::Pcg32;
+use rand::{SeedableRng, seq::SliceRandom};
+use rand_pcg::{Lcg64Xsh32, Pcg32};
 
 use crate::traits::{Euclidean, Generator};
 
+// 256-byte lookup table intentionally omits Copy to avoid implicit 256-byte stack copies.
+#[expect(
+    missing_copy_implementations,
+    reason = "256-byte permutation table should not be copied implicitly"
+)]
 pub struct PermutationTable {
     table: [u8; 256],
 }
 
 impl SeedableRng for PermutationTable {
-    type Seed = <rand_pcg::Lcg64Xsh32 as rand::SeedableRng>::Seed;
+    type Seed = <Lcg64Xsh32 as SeedableRng>::Seed;
 
     fn from_seed(seed: Self::Seed) -> Self {
-        let mut table = [0; 256];
-        table.iter_mut().enumerate().for_each(|(i, v)| *v = i as u8);
+        let mut table: [u8; 256] = std::array::from_fn(|i| u8::try_from(i).unwrap_or(0));
         let mut rng = Pcg32::from_seed(seed);
         table.shuffle(&mut rng);
         PermutationTable { table }
@@ -25,9 +29,12 @@ impl<const D: usize> Generator<[u8; D]> for PermutationTable {
     type Output = u8;
 
     fn generate(&self, point: [u8; D]) -> Self::Output {
-        point
-            .iter()
-            .fold(0, |acc, c| self.table[acc.wrapping_add(*c) as usize])
+        point.iter().fold(0, |acc, c| {
+            self.table
+                .get(usize::from(acc.wrapping_add(*c)))
+                .copied()
+                .unwrap_or(0)
+        })
     }
 }
 

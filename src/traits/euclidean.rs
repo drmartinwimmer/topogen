@@ -120,13 +120,29 @@ pub trait WrapToU8 {
 
 impl WrapToU8 for f32 {
     fn wrap_to_u8(self) -> u8 {
-        self.rem_euclid(256.0) as u8
+        // rem_euclid(256.0) bounds finite values into 0.0..256.0 prior to integer conversion.
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "rem_euclid(256.0) bounds the value to 0.0..256.0 before integer conversion"
+        )]
+        {
+            self.rem_euclid(256.0) as u8
+        }
     }
 }
 
 impl WrapToU8 for f64 {
     fn wrap_to_u8(self) -> u8 {
-        self.rem_euclid(256.0) as u8
+        // rem_euclid(256.0) bounds finite values into 0.0..256.0 prior to integer conversion.
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "rem_euclid(256.0) bounds the value to 0.0..256.0 before integer conversion"
+        )]
+        {
+            self.rem_euclid(256.0) as u8
+        }
     }
 }
 

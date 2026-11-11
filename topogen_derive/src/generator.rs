@@ -1,7 +1,7 @@
 use crate::helpers::{create_forward_generics, expand_generics, find_wrapped};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_quote, DeriveInput};
+use syn::{DeriveInput, parse_quote};
 
 pub fn generator(input: DeriveInput) -> TokenStream {
     let name = &input.ident;

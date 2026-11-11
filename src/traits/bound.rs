@@ -1,4 +1,4 @@
-use super::{euclidean::Euclidean, Coordinate};
+use super::{Coordinate, euclidean::Euclidean};
 use crate::{
     ops::{Bitmap, Union, UnionError, WithBoundingBox},
     shapes::BoundingBox,

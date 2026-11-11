@@ -1,5 +1,5 @@
-extern crate topogen_derive;
 extern crate self as topogen;
+extern crate topogen_derive;
 
 pub mod core;
 #[cfg(feature = "image")]

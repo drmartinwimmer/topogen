@@ -1,10 +1,10 @@
 use crate::traits::{Coordinate, Euclidean, Generator};
-use noise::NoiseFn;
+use noise::{NoiseFn, Perlin as RawPerlin, Simplex as RawSimplex};
 use rand::SeedableRng;
 
 pub struct Noise<N>(N);
-pub type Perlin = Noise<noise::Perlin>;
-pub type Simplex = Noise<noise::Simplex>;
+pub type Perlin = Noise<RawPerlin>;
+pub type Simplex = Noise<RawSimplex>;
 
 impl<N> Noise<N> {
     pub fn new(noise: N) -> Self {
@@ -19,23 +19,23 @@ where
 {
 }
 
-impl SeedableRng for Noise<noise::Perlin> {
+impl SeedableRng for Noise<RawPerlin> {
     // The noise crate currently hard-codes a 32-bit seed.
     // Assuming https://github.com/Razaekel/noise-rs/issues/197 is fixed, this can be replaced.
     type Seed = [u8; 4];
 
     fn from_seed(seed: Self::Seed) -> Self {
-        Noise::new(noise::Perlin::new(u32::from_le_bytes(seed)))
+        Noise::new(RawPerlin::new(u32::from_le_bytes(seed)))
     }
 }
 
-impl SeedableRng for Noise<noise::Simplex> {
+impl SeedableRng for Noise<RawSimplex> {
     // The noise crate currently hard-codes a 32-bit seed.
     // Assuming https://github.com/Razaekel/noise-rs/issues/197 is fixed, this can be replaced.
     type Seed = [u8; 4];
 
     fn from_seed(seed: Self::Seed) -> Self {
-        Noise::new(noise::Simplex::new(u32::from_le_bytes(seed)))
+        Noise::new(RawSimplex::new(u32::from_le_bytes(seed)))
     }
 }
 

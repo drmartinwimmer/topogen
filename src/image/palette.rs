@@ -1,9 +1,8 @@
 use super::IntoPixel;
 use palette::{
-    encoding,
+    Hsl, Hsla, IntoColor, Srgb, Srgba, encoding,
     rgb::{Rgb, Rgba},
     stimulus::IntoStimulus,
-    Hsl, Hsla, IntoColor, Srgb, Srgba,
 };
 
 impl<T: IntoStimulus<u8>> IntoPixel for Rgb<encoding::Srgb, T> {

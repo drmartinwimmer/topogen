@@ -1,17 +1,17 @@
-extern crate topogen;
 extern crate image;
+extern crate topogen;
 
+use palette::{Hsl, Hsla, RgbHue};
+use std::path::Path;
 use topogen::{
     image::Image,
     ops::Union,
     shapes::{BoundingBox, Sphere},
     traits::{Bounded, Euclidean, EuclideanVec, Generator, Shape},
 };
-use palette::Hsla;
-use std::path::Path;
 
 struct Terrain {
-    color: palette::Hsl,
+    color: Hsl,
 }
 
 const WIDTH: f32 = 312.;
@@ -34,7 +34,9 @@ where
         .map(move |d| {
             let weight = (1.0 * FADE.powf(d)).max(0.0);
             let mut weights = [0.0; N];
-            weights[terrain_id] = weight;
+            if let Some(slot) = weights.get_mut(terrain_id) {
+                *slot = weight;
+            }
             weights
         })
         .bound_to(Sphere {
@@ -43,14 +45,7 @@ where
         })
 }
 
-fn combine_terrain_weights<const N: usize>(a: [f32; N], b: [f32; N]) -> [f32; N] {
-    a.add(b)
-}
-
-fn render_dominant_terrain<const N: usize>(
-    weights: &[f32; N],
-    terrains: &[Terrain; N],
-) -> palette::Hsla {
+fn render_dominant_terrain<const N: usize>(weights: &[f32; N], terrains: &[Terrain; N]) -> Hsla {
     let mut first = true;
     let mut max_id: Option<usize> = None;
     let weight_sum: f32 = weights.iter().sum();
@@ -61,40 +56,40 @@ fn render_dominant_terrain<const N: usize>(
             first = false;
         }
     }
-    match max_id {
-        Some(id) => Hsla {
-            color: terrains[id].color,
+    max_id.and_then(|id| terrains.get(id)).map_or_else(
+        || Hsla::new(0.0, 0.0, 0.0, 0.0),
+        |terrain| Hsla {
+            color: terrain.color,
             alpha: 1.0,
         },
-        None => Hsla::new(0.0, 0.0, 0.0, 0.0),
-    }
+    )
 }
 
 fn main() {
     let terrains = [
         // Desert
         Terrain {
-            color: palette::Hsl::new(palette::RgbHue::new(43.), 0.42, 0.77),
+            color: Hsl::new(RgbHue::new(43.), 0.42, 0.77),
         },
         // Grassland
         Terrain {
-            color: palette::Hsl::new(palette::RgbHue::new(62.), 0.34, 0.65),
+            color: Hsl::new(RgbHue::new(62.), 0.34, 0.65),
         },
         // Mountain
         Terrain {
-            color: palette::Hsl::new(palette::RgbHue::new(27.), 0.20, 0.67),
+            color: Hsl::new(RgbHue::new(27.), 0.20, 0.67),
         },
         // Water
         Terrain {
-            color: palette::Hsl::new(palette::RgbHue::new(176.), 0.19, 0.52),
+            color: Hsl::new(RgbHue::new(176.), 0.19, 0.52),
         },
         // Sea
         Terrain {
-            color: palette::Hsl::new(palette::RgbHue::new(192.), 0.31, 0.38),
+            color: Hsl::new(RgbHue::new(192.), 0.31, 0.38),
         },
     ];
 
-    let center = tile([0.0, 0.0], 1);
+    let center = tile::<5>([0.0, 0.0], 1);
     let nw = tile([-WIDTH / 2.0, -HEIGHT], 1);
     let w = tile([-WIDTH, 0.0], 1);
     let sw = tile([-WIDTH / 2.0, HEIGHT], 0);
@@ -102,15 +97,12 @@ fn main() {
     let e = tile([WIDTH, 0.0], 3);
     let ne = tile([WIDTH / 2.0, -HEIGHT], 3);
 
-    let union = Union::new(
-        vec![center, nw, w, sw, se, e, ne],
-        combine_terrain_weights::<5>,
-    )
-    .unwrap()
-    .with_bounding_box(BoundingBox::new_centered([0.0, 0.0], [WIDTH, HEIGHT]));
+    let union = Union::new(vec![center, nw, w, sw, se, e, ne], EuclideanVec::add)
+        .expect("failed to construct terrain union")
+        .with_bounding_box(BoundingBox::new_centered([0.0, 0.0], [WIDTH, HEIGHT]));
 
     let image = union.map(|weights| render_dominant_terrain(&weights, &terrains));
     image
         .save_image(Path::new("hex_tile.png"), [1.0, 1.0])
-        .unwrap();
+        .expect("failed to save hex tile image");
 }
