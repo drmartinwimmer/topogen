@@ -1,0 +1,43 @@
+version: 2
+
+multi-ecosystem-groups:
+  rust-toolchain:
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "rust-toolchain"
+    directory: "/"
+    multi-ecosystem-group: "rust-toolchain"
+    patterns:
+      - "*"
+
+  - package-ecosystem: "nix"
+    directory: "/"
+    multi-ecosystem-group: "rust-toolchain"
+    patterns:
+      - "*"
+    cooldown:
+      exclude:
+        - "*"

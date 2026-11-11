@@ -1,14 +1,17 @@
 [package]
 name = "topogen_derive"
 version = "0.1.0"
-edition = "2021"
-description = "Derive macros for topogen"
+edition = "2024"
+rust-version = "1.88.0"
+license = "MIT"
 repository = "https://github.com/drmartinwimmer/topogen"
+description = "Derive macros for topogen"
+readme = "../README.md"
+keywords = ["procedural", "derive", "macros", "spatial"]
+categories = ["development-tools::procedural-macro-helpers"]
 
 [lib]
 proc-macro = true
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 proc-macro2 = "1.0.83"
@@ -17,3 +20,6 @@ syn = "2.0.65"
 
 [dev-dependencies]
 googletest = "0.14"
+
+[lints]
+workspace = true
