@@ -1,7 +1,7 @@
-extern crate generative_map;
+extern crate topogen;
 extern crate image;
 
-use generative_map::{
+use topogen::{
     image::Image,
     ops::Union,
     shapes::{BoundingBox, Sphere},

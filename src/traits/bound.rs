@@ -4,7 +4,7 @@ use crate::{
     shapes::BoundingBox,
 };
 
-pub use generative_map_derive::Bounded;
+pub use topogen_derive::Bounded;
 
 pub trait Bounded<T, const D: usize>: Euclidean<T, D>
 where

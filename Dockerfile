@@ -1,7 +1,7 @@
 # Development container for local development & Gitlab-CI.
-FROM rust:1.76.0 AS detmap_dev
+FROM rust:1.76.0 AS topogen_dev
 
-ENV DEFAULT_USER=detmap
+ENV DEFAULT_USER=topogen
 ENV DEBIAN_FRONTEND=noninteractive
 RUN \
     apt-get update && \

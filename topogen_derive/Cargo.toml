@@ -1,7 +1,9 @@
 [package]
-name = "generative_map_derive"
+name = "topogen_derive"
 version = "0.1.0"
 edition = "2021"
+description = "Derive macros for topogen"
+repository = "https://github.com/drmartinwimmer/topogen"
 
 [lib]
 proc-macro = true

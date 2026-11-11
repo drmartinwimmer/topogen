@@ -1,5 +1,5 @@
-extern crate generative_map_derive;
-extern crate self as generative_map;
+extern crate topogen_derive;
+extern crate self as topogen;
 
 pub mod core;
 #[cfg(feature = "image")]

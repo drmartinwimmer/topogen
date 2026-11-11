@@ -1,6 +1,6 @@
 use crate::ops;
 
-pub use generative_map_derive::Generator;
+pub use topogen_derive::Generator;
 
 pub trait Generator<I>: Sized {
     type Output;

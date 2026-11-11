@@ -2,7 +2,7 @@ use super::{Bounded, Generator};
 use crate::ops::{BoundTo, Fbm, Scale, Translate};
 use num_traits::Float;
 
-pub use generative_map_derive::Euclidean;
+pub use topogen_derive::Euclidean;
 
 pub trait Coordinate:
     Copy
