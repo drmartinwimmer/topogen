@@ -1,7 +1,7 @@
 use crate::traits::{Center, Coordinate, Euclidean, Generator, Shape};
 use std::marker::PhantomData;
 
-#[derive(Debug, Euclidean, Center)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean, Center)]
 pub struct DistanceMap<S, T, const D: usize> {
     i: PhantomData<[T; D]>,
     #[wrap]
@@ -29,7 +29,35 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean, Center)]
+pub struct SignedDistanceMap<S, T, const D: usize> {
+    i: PhantomData<[T; D]>,
+    #[wrap]
+    pub shape: S,
+}
+
+impl<S, T, const D: usize> SignedDistanceMap<S, T, D> {
+    pub(crate) fn new(shape: S) -> Self {
+        Self {
+            i: PhantomData,
+            shape,
+        }
+    }
+}
+
+impl<S, T, const D: usize> Generator<[T; D]> for SignedDistanceMap<S, T, D>
+where
+    T: Coordinate + num_traits::Float,
+    S: Shape<T, D>,
+{
+    type Output = T;
+
+    fn generate(&self, input: [T; D]) -> Self::Output {
+        self.shape.signed_distance(input)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CenterDistanceMap<C, T, const D: usize> {
     i: PhantomData<[T; D]>,
     pub center: C,
@@ -87,6 +115,18 @@ mod tests {
         }
         .distance_map();
         expect_that!(map.generate([1.0, 2.0]), eq(0.0));
+        expect_that!(map.generate([4.0, 6.0]), eq(3.0));
+    }
+
+    #[googletest::test]
+    fn signed_distance_map_evaluates_interior_boundary_and_exterior() {
+        let map = Sphere {
+            radius: 2.0_f64,
+            center: [1.0, 2.0],
+        }
+        .signed_distance_map();
+        expect_that!(map.generate([1.0, 2.0]), eq(-2.0));
+        expect_that!(map.generate([3.0, 2.0]), eq(0.0));
         expect_that!(map.generate([4.0, 6.0]), eq(3.0));
     }
 

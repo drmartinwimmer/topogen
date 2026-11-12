@@ -2,6 +2,7 @@ use num_traits::Float;
 
 use crate::traits::{Center, Coordinate, Euclidean, Generator};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Sin<T, const D: usize>
 where
     T: Coordinate,

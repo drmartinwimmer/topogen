@@ -1,7 +1,7 @@
 use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Shape};
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Cuboid<T, const D: usize> {
     pub center: [T; D],
     pub extents: [T; D],
@@ -51,27 +51,31 @@ where
     where
         T: num_traits::Float,
     {
-        let mut closest_point = point;
-        closest_point
-            .iter_mut()
-            .zip(self.extents.iter().zip(self.center.iter()))
-            .for_each(|(p, (e, c))| {
-                let (left, right) = (*c - *e, *c + *e);
-                *p = if *p < left {
-                    left
-                } else if *p > right {
-                    right
-                } else {
-                    *p
-                }
-            });
+        T::max(self.signed_distance(point), T::zero())
+    }
 
-        let distance: T = point
+    fn signed_distance(&self, point: [T; D]) -> T
+    where
+        T: num_traits::Float,
+    {
+        let mut q = [T::zero(); D];
+        for ((qi, p), (e, c)) in q
+            .iter_mut()
+            .zip(point)
+            .zip(self.extents.into_iter().zip(self.center))
+        {
+            *qi = (p - c).abs() - e;
+        }
+        let outside_sq: T = q
             .into_iter()
-            .zip(closest_point.iter())
-            .map(|(p, c)| (p - *c) * (p - *c))
+            .map(|qi| T::max(qi, T::zero()))
+            .map(|d| d * d)
             .sum();
-        distance.sqrt()
+        let inside = q
+            .into_iter()
+            .reduce(T::max)
+            .map_or_else(T::zero, |m| T::min(m, T::zero()));
+        outside_sq.sqrt() + inside
     }
 }
 
@@ -191,5 +195,18 @@ mod tests {
         expect_that!(cuboid.distance([0.0, 0.0]), eq(5.0));
         expect_that!(cuboid.distance([4.0, 5.0]), eq(0.0));
         expect_that!(cuboid.distance([5.0, 7.0]), eq(1.0));
+    }
+
+    #[googletest::test]
+    fn returns_cuboid_signed_distance() {
+        let cuboid = Cuboid {
+            center: [0.0_f64, 0.0],
+            extents: [2.0, 3.0],
+        };
+        expect_that!(cuboid.signed_distance([0.0, 0.0]), eq(-2.0));
+        expect_that!(cuboid.signed_distance([1.5, 0.0]), eq(-0.5));
+        expect_that!(cuboid.signed_distance([2.0, 1.0]), eq(0.0));
+        expect_that!(cuboid.signed_distance([5.0, 1.0]), eq(3.0));
+        expect_that!(cuboid.signed_distance([5.0, 7.0]), eq(5.0));
     }
 }

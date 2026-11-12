@@ -6,12 +6,16 @@
 
 ### Enums
 
-- `pub enum ImageRenderError< T : Display > { ImageError(ImageError), BoundingBoxError(BoundingBoxError < T >), EmptyBoundingBox, UnboundedBoundingBox }`
+- `pub enum ImageRenderError< T : Display > { ImageError(ImageError), BoundingBoxError(BoundingBoxError < T >), EmptyBoundingBox, UnboundedBoundingBox, InvalidStep([T ; 2]) }`
 
 ### Traits
 
-- `pub trait Image< T : Display >: Generator < [T ; 2] > { fn save_image(self, path: & Path, step: [T ; 2]) -> Result < () , ImageRenderError < T > >; }`
+- `pub trait Image< T : Display >: Generator < [T ; 2] > { type Pixel; fn render_image(& self, step: [T ; 2]) -> Result < RenderedImage < Self :: Pixel > , ImageRenderError < T > >; fn save_image(& self, path: & Path, step: [T ; 2]) -> Result < () , ImageRenderError < T > >; }`
 - `pub trait IntoPixel { type Pixel; fn into_pixel(self) -> Self :: Pixel; }`
+
+### Type Aliases
+
+- `pub type RenderedImage< P > = ImageBuffer < P , Vec < < P as Pixel > :: Subpixel > >;`
 
 ### Re-exports
 
@@ -47,6 +51,7 @@
 - `pub use repeat::Repeat;`
 - `pub use scale::Scale;`
 - `pub use shape::Shape;`
+- `pub use distance_map::SignedDistanceMap;`
 - `pub use sin::Sin;`
 - `pub use sphere::Sphere;`
 - `pub use translate::Translate;`

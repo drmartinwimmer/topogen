@@ -72,7 +72,7 @@ where
     }
 
     fn bounding_box(&self) -> BoundingBox<T, D> {
-        self.bounding_box.clone()
+        self.bounding_box
     }
 }
 
@@ -88,6 +88,17 @@ where
         self.elements
             .iter()
             .map(|e| e.distance(point))
+            .reduce(Float::min)
+            .unwrap_or(T::infinity())
+    }
+
+    fn signed_distance(&self, point: [T; D]) -> T
+    where
+        T: Float,
+    {
+        self.elements
+            .iter()
+            .map(|e| e.signed_distance(point))
             .reduce(Float::min)
             .unwrap_or(T::infinity())
     }

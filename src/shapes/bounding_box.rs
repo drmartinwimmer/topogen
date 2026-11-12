@@ -2,9 +2,10 @@ use crate::traits::Coordinate;
 use std::cmp::Ordering;
 use std::fmt::Display;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum BoundingBox<T: Copy + std::fmt::Debug, const D: usize> {
     Unbounded,
+    #[default]
     Empty,
     Bounded([DimensionBound<T>; D]),
 }
@@ -67,7 +68,7 @@ where
     pub fn for_union(&self, other: &Self) -> Result<Self, BoundingBoxError<T>> {
         match (self, other) {
             (BoundingBox::Unbounded, _) | (_, BoundingBox::Unbounded) => Ok(BoundingBox::Unbounded),
-            (BoundingBox::Empty, other) | (other, BoundingBox::Empty) => Ok(other.clone()),
+            (BoundingBox::Empty, other) | (other, BoundingBox::Empty) => Ok(*other),
             (BoundingBox::Bounded(b1), BoundingBox::Bounded(b2)) => {
                 let mut union = [DimensionBound::Empty; D];
                 for (out, (d1, d2)) in union.iter_mut().zip(b1.iter().zip(b2.iter())) {
@@ -80,7 +81,7 @@ where
 
     pub fn for_intersect(&self, other: &Self) -> Result<Self, BoundingBoxError<T>> {
         match (self, other) {
-            (BoundingBox::Unbounded, other) | (other, BoundingBox::Unbounded) => Ok(other.clone()),
+            (BoundingBox::Unbounded, other) | (other, BoundingBox::Unbounded) => Ok(*other),
             (BoundingBox::Empty, _) | (_, BoundingBox::Empty) => Ok(BoundingBox::Empty),
             (BoundingBox::Bounded(b1), BoundingBox::Bounded(b2)) => {
                 let mut intersect = [DimensionBound::Unbounded; D];
@@ -133,7 +134,7 @@ where
     }
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum DimensionBound<T> {
     #[default]
     Empty,

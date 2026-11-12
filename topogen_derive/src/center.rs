@@ -5,7 +5,10 @@ use syn::{DeriveInput, parse_quote};
 
 pub fn center(input: DeriveInput) -> TokenStream {
     let name = &input.ident;
-    let wrapped = find_wrapped(&input).expect("Failed to find a field with the #[wrap] attribute");
+    let wrapped = match find_wrapped(&input) {
+        Ok(field) => field,
+        Err(err) => return err.to_compile_error(),
+    };
     let wrapped_id = &wrapped.ident;
     let wrapped_ty = &wrapped.ty;
     let forward_generics = create_forward_generics(&input);

@@ -1,5 +1,6 @@
 use crate::traits::{Center, Coordinate, Euclidean};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Point<T, const D: usize> {
     pub coordinates: [T; D],
 }
