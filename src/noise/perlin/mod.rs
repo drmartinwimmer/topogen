@@ -8,6 +8,14 @@ use num_traits::Float;
 use rand::SeedableRng;
 use std::marker::PhantomData;
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Interpolation {
+    #[default]
+    Quintic,
+    Smoothstep,
+    Linear,
+}
+
 pub trait GradientTable<O: Float, const D: usize> {
     fn get(&self, entry: u8) -> [O; D];
 }
@@ -18,11 +26,10 @@ struct Perlin<T: Coordinate + Float, const D: usize, G: GradientTable<T, D>> {
     _output: PhantomData<T>,
 }
 
-// Retained alongside quintic interpolation as the classic Perlin smoothstep curve.
-#[expect(
-    dead_code,
-    reason = "Retained as a standard Perlin smoothstep interpolation curve alongside quintic"
-)]
+fn interpolate_linear<T: Coordinate + Float>(a: T, b: T, x: T) -> T {
+    a * (T::one() - x) + b * x
+}
+
 fn interpolate_smoothstep<T: Coordinate + Float>(a: T, b: T, x: T) -> T {
     let two = T::one() + T::one();
     let three = two + T::one();
@@ -54,17 +61,7 @@ impl<T: Coordinate + Float + WrapToU8, const D: usize, G: GradientTable<T, D>> P
         let corner_u8 = corner.wrap_to_u8();
         let perm = self.permutation_table.generate(corner_u8);
         let gradient = self.gradient_table.get(perm);
-        // println!(
-        //     "Point: {:?},Corner: {:?}, perm: {}, gradient: {:?}",
-        //     point, corner, perm, gradient,
-        // );
         let offset = point.sub(corner);
-        // println!(
-        //     "Gradient: {:?}, offset: {:?}, dot: {}",
-        //     gradient,
-        //     offset,
-        //     gradient.dot(offset)
-        // );
         gradient.dot(offset)
     }
 
@@ -75,12 +72,6 @@ impl<T: Coordinate + Float + WrapToU8, const D: usize, G: GradientTable<T, D>> P
         d: usize,
         interpolate: fn(T, T, T) -> T,
     ) -> T {
-        // if d == 0 {
-        //     println!(
-        //         "Get Corner Value corner: {:?}, point: {:?}, d: {}",
-        //         corner, point, d
-        //     );
-        // }
         let (Some(&point_d), Some(&corner_d)) = (point.get(d), corner.get(d)) else {
             return self.get_corner_value(corner, point);
         };
@@ -93,7 +84,12 @@ impl<T: Coordinate + Float + WrapToU8, const D: usize, G: GradientTable<T, D>> P
         interpolate(a, b, point_d + T::one() - corner_next)
     }
 
-    pub fn generate(&self, point: [T; D], interpolate: fn(T, T, T) -> T) -> T {
+    pub fn generate(&self, point: [T; D], interpolation: Interpolation) -> T {
+        let interpolate = match interpolation {
+            Interpolation::Quintic => interpolate_quintic,
+            Interpolation::Smoothstep => interpolate_smoothstep,
+            Interpolation::Linear => interpolate_linear,
+        };
         let corner = point.floor();
         self.get_corner_value_d(corner, &point, 0, interpolate)
     }
@@ -105,12 +101,25 @@ pub struct ImprovedPerlin<
     G: GradientTable<T, D> = FixedGradientTable<T, D>,
 > {
     perlin: Perlin<T, D, G>,
+    interpolation: Interpolation,
+}
+
+impl<T: Coordinate + Float, const D: usize, G: GradientTable<T, D>> ImprovedPerlin<T, D, G> {
+    pub fn with_interpolation(mut self, interpolation: Interpolation) -> Self {
+        self.interpolation = interpolation;
+        self
+    }
+
+    pub fn interpolation(&self) -> Interpolation {
+        self.interpolation
+    }
 }
 
 impl<T: Coordinate + Float + WrapToU8> ImprovedPerlin<T, 1, FixedGradientTable<T, 1>> {
     pub fn new(seed: [u8; 16]) -> Self {
         Self {
             perlin: Perlin::new(seed, FixedGradientTable::new()),
+            interpolation: Interpolation::default(),
         }
     }
 }
@@ -119,6 +128,7 @@ impl<T: Coordinate + Float + WrapToU8> ImprovedPerlin<T, 2, FixedGradientTable<T
     pub fn new(seed: [u8; 16]) -> Self {
         Self {
             perlin: Perlin::new(seed, FixedGradientTable::new()),
+            interpolation: Interpolation::default(),
         }
     }
 }
@@ -127,6 +137,7 @@ impl<T: Coordinate + Float + WrapToU8> ImprovedPerlin<T, 3, FixedGradientTable<T
     pub fn new(seed: [u8; 16]) -> Self {
         Self {
             perlin: Perlin::new(seed, FixedGradientTable::new()),
+            interpolation: Interpolation::default(),
         }
     }
 }
@@ -137,7 +148,7 @@ impl<T: Coordinate + Float + WrapToU8, const D: usize, G: GradientTable<T, D>> G
     type Output = T;
 
     fn generate(&self, point: [T; D]) -> Self::Output {
-        self.perlin.generate(point, interpolate_quintic)
+        self.perlin.generate(point, self.interpolation)
     }
 }
 
@@ -183,6 +194,33 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::{ImprovedPerlin, Interpolation};
+    use crate::traits::Generator;
+    use googletest::prelude::*;
+    use rand::SeedableRng;
+
+    #[googletest::test]
+    fn improved_perlin_supports_configurable_interpolation() {
+        let quintic: ImprovedPerlin<f64, 2> = ImprovedPerlin::seed_from_u64(42);
+        let smoothstep: ImprovedPerlin<f64, 2> =
+            ImprovedPerlin::seed_from_u64(42).with_interpolation(Interpolation::Smoothstep);
+        let linear: ImprovedPerlin<f64, 2> =
+            ImprovedPerlin::seed_from_u64(42).with_interpolation(Interpolation::Linear);
+
+        expect_that!(quintic.interpolation(), eq(Interpolation::Quintic));
+        expect_that!(smoothstep.interpolation(), eq(Interpolation::Smoothstep));
+        expect_that!(linear.interpolation(), eq(Interpolation::Linear));
+
+        // At lattice midpoints (x = 0.5), quintic, smoothstep, and linear weights all equal 0.5;
+        // off-midpoint coordinates produce distinct values across interpolation curves.
+        let sample = [0.25, 0.7];
+        let q = quintic.generate(sample);
+        let s = smoothstep.generate(sample);
+        let l = linear.generate(sample);
+        expect_that!((q - s).abs(), gt(1e-6));
+        expect_that!((s - l).abs(), gt(1e-6));
+    }
+
     #[cfg(feature = "palette")]
     mod golden {
         use super::super::ImprovedPerlin;

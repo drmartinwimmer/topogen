@@ -1,5 +1,5 @@
 use super::{Bounded, Generator};
-use crate::ops::{BoundTo, Fbm, PeriodicCoordinate, Repeat, Scale, Translate};
+use crate::ops::{BoundTo, Fbm, PeriodicCoordinate, Repeat, Rotate2D, Scale, Translate, Warp};
 use num_traits::Float;
 
 pub use topogen_derive::Euclidean;
@@ -190,12 +190,27 @@ pub trait Euclidean<T: Coordinate, const D: usize>: Sized {
         Repeat::new(self, center, period)
     }
 
+    fn rotate(self, angle: T) -> Rotate2D<Self, T>
+    where
+        Self: Euclidean<T, 2>,
+        T: Float,
+    {
+        Rotate2D::new(self, angle)
+    }
+
     fn scale(self, factor: [T; D]) -> Scale<Self, T, D> {
         Scale::new(self, factor)
     }
 
     fn translate(self, translation: [T; D]) -> Translate<Self, T, D> {
         Translate::new(self, translation)
+    }
+
+    fn warp<W>(self, warp: W) -> Warp<Self, W>
+    where
+        W: Generator<[T; D], Output = [T; D]>,
+    {
+        Warp::new(self, warp)
     }
 }
 
