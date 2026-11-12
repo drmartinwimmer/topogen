@@ -13,7 +13,7 @@ impl<T, const D: usize> BoundingBox<T, D>
 where
     T: Coordinate,
 {
-    pub fn new_bounded(b: [DimensionBound<T>; D]) -> Result<Self, Error<T>> {
+    pub fn new_bounded(b: [DimensionBound<T>; D]) -> Result<Self, BoundingBoxError<T>> {
         Self::validated(Self::Bounded(b))
     }
 
@@ -33,7 +33,7 @@ where
         Self::Bounded(bounding_box)
     }
 
-    fn validated(self) -> Result<Self, Error<T>> {
+    fn validated(self) -> Result<Self, BoundingBoxError<T>> {
         match self {
             BoundingBox::Unbounded => Ok(BoundingBox::Unbounded),
             BoundingBox::Empty => Ok(BoundingBox::Empty),
@@ -64,7 +64,7 @@ where
         }
     }
 
-    pub fn for_union(&self, other: &Self) -> Result<Self, Error<T>> {
+    pub fn for_union(&self, other: &Self) -> Result<Self, BoundingBoxError<T>> {
         match (self, other) {
             (BoundingBox::Unbounded, _) | (_, BoundingBox::Unbounded) => Ok(BoundingBox::Unbounded),
             (BoundingBox::Empty, other) | (other, BoundingBox::Empty) => Ok(other.clone()),
@@ -78,7 +78,7 @@ where
         }
     }
 
-    pub fn for_intersect(&self, other: &Self) -> Result<Self, Error<T>> {
+    pub fn for_intersect(&self, other: &Self) -> Result<Self, BoundingBoxError<T>> {
         match (self, other) {
             (BoundingBox::Unbounded, other) | (other, BoundingBox::Unbounded) => Ok(other.clone()),
             (BoundingBox::Empty, _) | (_, BoundingBox::Empty) => Ok(BoundingBox::Empty),
@@ -93,14 +93,28 @@ where
     }
 
     pub fn scale(self, factor: [T; D]) -> Self {
+        let zero: T = std::iter::empty().sum();
+        let is_non_invertible = |f: T| matches!(f.partial_cmp(&zero), Some(Ordering::Equal) | None);
         match self {
-            BoundingBox::Unbounded => BoundingBox::Unbounded,
+            BoundingBox::Unbounded => {
+                if factor.into_iter().any(is_non_invertible) {
+                    BoundingBox::Empty
+                } else {
+                    BoundingBox::Unbounded
+                }
+            }
             BoundingBox::Empty => BoundingBox::Empty,
             BoundingBox::Bounded(mut b) => {
                 b.iter_mut().zip(factor).for_each(|(b, f)| {
                     *b = b.scale(f);
                 });
-                BoundingBox::Bounded(b)
+                if b.iter().all(|b| matches!(b, DimensionBound::Unbounded)) {
+                    BoundingBox::Unbounded
+                } else if b.iter().any(|b| matches!(b, DimensionBound::Empty)) {
+                    BoundingBox::Empty
+                } else {
+                    BoundingBox::Bounded(b)
+                }
             }
         }
     }
@@ -129,36 +143,36 @@ pub enum DimensionBound<T> {
     Range(T, T),
 }
 
-fn min<T>(a: T, b: T) -> Result<T, Error<T>>
+fn min<T>(a: T, b: T) -> Result<T, BoundingBoxError<T>>
 where
     T: Coordinate,
 {
     match a.partial_cmp(&b) {
         Some(Ordering::Less) | Some(Ordering::Equal) => Ok(a),
         Some(Ordering::Greater) => Ok(b),
-        None => Err(Error::PartialCmpFailed(a, b)),
+        None => Err(BoundingBoxError::PartialCmpFailed(a, b)),
     }
 }
 
-fn max<T>(a: T, b: T) -> Result<T, Error<T>>
+fn max<T>(a: T, b: T) -> Result<T, BoundingBoxError<T>>
 where
     T: Coordinate,
 {
     match a.partial_cmp(&b) {
         Some(Ordering::Greater) | Some(Ordering::Equal) => Ok(a),
         Some(Ordering::Less) => Ok(b),
-        None => Err(Error::PartialCmpFailed(a, b)),
+        None => Err(BoundingBoxError::PartialCmpFailed(a, b)),
     }
 }
 
-fn range<T>(min: T, max: T) -> Result<DimensionBound<T>, Error<T>>
+fn range<T>(min: T, max: T) -> Result<DimensionBound<T>, BoundingBoxError<T>>
 where
     T: Coordinate,
 {
     match min.partial_cmp(&max) {
         Some(Ordering::Less) => Ok(DimensionBound::Range(min, max)),
         Some(Ordering::Greater) | Some(Ordering::Equal) => Ok(DimensionBound::Empty),
-        None => Err(Error::PartialCmpFailed(min, max)),
+        None => Err(BoundingBoxError::PartialCmpFailed(min, max)),
     }
 }
 
@@ -176,7 +190,7 @@ where
         }
     }
 
-    fn for_union(self, other: Self) -> Result<Self, Error<T>> {
+    fn for_union(self, other: Self) -> Result<Self, BoundingBoxError<T>> {
         match (self, other) {
             (DimensionBound::Empty, other) | (other, DimensionBound::Empty) => Ok(other),
             (DimensionBound::Unbounded, _)
@@ -199,7 +213,7 @@ where
         }
     }
 
-    fn for_intersect(self, other: Self) -> Result<Self, Error<T>> {
+    fn for_intersect(self, other: Self) -> Result<Self, BoundingBoxError<T>> {
         match (self, other) {
             (DimensionBound::Empty, _) | (_, DimensionBound::Empty) => Ok(DimensionBound::Empty),
             (DimensionBound::Unbounded, other) | (other, DimensionBound::Unbounded) => Ok(other),
@@ -226,12 +240,27 @@ where
     }
 
     fn scale(self, factor: T) -> Self {
-        match self {
-            DimensionBound::Empty => DimensionBound::Empty,
-            DimensionBound::Unbounded => DimensionBound::Unbounded,
-            DimensionBound::Min(min) => DimensionBound::Min(min * factor),
-            DimensionBound::Max(max) => DimensionBound::Max(max * factor),
-            DimensionBound::Range(min, max) => DimensionBound::Range(min * factor, max * factor),
+        let zero: T = std::iter::empty().sum();
+        match factor.partial_cmp(&zero) {
+            Some(Ordering::Greater) => match self {
+                DimensionBound::Empty => DimensionBound::Empty,
+                DimensionBound::Unbounded => DimensionBound::Unbounded,
+                DimensionBound::Min(min) => DimensionBound::Min(min * factor),
+                DimensionBound::Max(max) => DimensionBound::Max(max * factor),
+                DimensionBound::Range(min, max) => {
+                    DimensionBound::Range(min * factor, max * factor)
+                }
+            },
+            Some(Ordering::Less) => match self {
+                DimensionBound::Empty => DimensionBound::Empty,
+                DimensionBound::Unbounded => DimensionBound::Unbounded,
+                DimensionBound::Min(min) => DimensionBound::Max(min * factor),
+                DimensionBound::Max(max) => DimensionBound::Min(max * factor),
+                DimensionBound::Range(min, max) => {
+                    DimensionBound::Range(max * factor, min * factor)
+                }
+            },
+            Some(Ordering::Equal) | None => DimensionBound::Empty,
         }
     }
 
@@ -247,14 +276,14 @@ where
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum Error<T: Display> {
+pub enum BoundingBoxError<T: Display> {
     #[error("Partial comparison failed: {0}, {1}")]
     PartialCmpFailed(T, T),
 }
 
 #[cfg(test)]
 mod tests {
-    use super::BoundingBox;
+    use super::{BoundingBox, DimensionBound};
     use googletest::prelude::*;
 
     #[googletest::test]
@@ -288,5 +317,25 @@ mod tests {
         expect_that!(inter.within([16, 16]), is_true());
         expect_that!(inter.within([20, 19]), is_false());
         Ok(())
+    }
+
+    #[googletest::test]
+    fn scales_bounds_with_negative_factor() -> Result<()> {
+        let bound =
+            BoundingBox::new_bounded([DimensionBound::Range(2.0, 5.0), DimensionBound::Min(1.0)])?;
+        let mirrored = bound.scale([-2.0, -3.0]);
+        expect_that!(mirrored.within([-6.0, -4.0]), is_true());
+        expect_that!(mirrored.within([-3.0, -4.0]), is_false());
+        expect_that!(mirrored.within([-11.0, -4.0]), is_false());
+        expect_that!(mirrored.within([-6.0, -2.0]), is_false());
+        Ok(())
+    }
+
+    #[googletest::test]
+    fn scales_bounds_with_zero_factor_to_empty() {
+        let bound = BoundingBox::new_offset([1.0, 1.0], [4.0, 4.0]);
+        let collapsed = bound.scale([0.0, 2.0]);
+        expect_that!(collapsed.within([0.0, 4.0]), is_false());
+        expect_that!(matches!(collapsed, BoundingBox::Empty), is_true());
     }
 }

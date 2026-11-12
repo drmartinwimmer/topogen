@@ -6,11 +6,11 @@
 
 ### Enums
 
-- `pub enum Error< T : Display > { ImageError(ImageError), BoundingBoxError(BoundingBoxError < T >), EmptyBoundingBox, UnboundedBoundingBox }`
+- `pub enum ImageRenderError< T : Display > { ImageError(ImageError), BoundingBoxError(BoundingBoxError < T >), EmptyBoundingBox, UnboundedBoundingBox }`
 
 ### Traits
 
-- `pub trait Image< T : Display >: Generator < [T ; 2] > { fn save_image(self, path: & Path, step: [T ; 2]) -> Result < () , Error < T > >; }`
+- `pub trait Image< T : Display >: Generator < [T ; 2] > { fn save_image(self, path: & Path, step: [T ; 2]) -> Result < () , ImageRenderError < T > >; }`
 - `pub trait IntoPixel { type Pixel; fn into_pixel(self) -> Self :: Pixel; }`
 
 ### Re-exports
@@ -19,6 +19,7 @@
 - `pub use bound_to::BoundTo;`
 - `pub use bound::Bounded;`
 - `pub use bounding_box::BoundingBox;`
+- `pub use bounding_box::BoundingBoxError;`
 - `pub use by_ref::ByRef;`
 - `pub use center::Center;`
 - `pub use distance_map::CenterDistanceMap;`
@@ -28,8 +29,6 @@
 - `pub use cuboid::Cuboid;`
 - `pub use bounding_box::DimensionBound;`
 - `pub use distance_map::DistanceMap;`
-- `pub use union::Error;`
-- `pub use bounding_box::Error;`
 - `pub use euclidean::Euclidean;`
 - `pub use euclidean::EuclideanVec;`
 - `pub use euclidean::EuclideanVecFloat;`
@@ -47,6 +46,7 @@
 - `pub use sphere::Sphere;`
 - `pub use translate::Translate;`
 - `pub use union::Union;`
+- `pub use union::UnionError;`
 - `pub use with_bounding_box::WithBoundingBox;`
 - `pub use worley::Worley;`
 - `pub use euclidean::WrapToU8;`

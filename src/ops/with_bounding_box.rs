@@ -69,3 +69,26 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        shapes::{BoundingBox, Cuboid},
+        traits::{Bounded, Generator},
+    };
+    use googletest::prelude::*;
+
+    #[googletest::test]
+    fn with_bounding_box_restricts_generator_domain() {
+        let cube = Cuboid {
+            center: [0, 0],
+            extents: [5, 5],
+        }
+        .bitmap()
+        .with_bounding_box(BoundingBox::new_centered([0, 0], [2, 2]));
+        expect_that!(cube.within([1, 1]), is_true());
+        expect_that!(cube.within([3, 0]), is_false());
+        expect_that!(cube.generate([1, -1]), is_true());
+        expect_that!(cube.generate([3, 0]), is_false());
+    }
+}

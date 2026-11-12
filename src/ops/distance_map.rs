@@ -70,3 +70,30 @@ where
         self.center.center()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        shapes::{Point, Sphere},
+        traits::{Center, Generator, Shape},
+    };
+    use googletest::prelude::*;
+
+    #[googletest::test]
+    fn distance_map_evaluates_shape_distance() {
+        let map = Sphere {
+            radius: 2.0_f64,
+            center: [1.0, 2.0],
+        }
+        .distance_map();
+        expect_that!(map.generate([1.0, 2.0]), eq(0.0));
+        expect_that!(map.generate([4.0, 6.0]), eq(3.0));
+    }
+
+    #[googletest::test]
+    fn center_distance_map_evaluates_euclidean_distance() {
+        let map = Point::new([1.0_f64, 2.0]).center_distance_map();
+        expect_that!(map.center(), eq([1.0, 2.0]));
+        expect_that!(map.generate([4.0, 6.0]), eq(5.0));
+    }
+}

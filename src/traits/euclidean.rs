@@ -171,7 +171,7 @@ pub trait Euclidean<T: Coordinate, const D: usize>: Sized {
         BoundTo::new(self, bound_to)
     }
 
-    fn fbm<O>(
+    fn fbm(
         self,
         octaves: usize,
         lacunarity: T,
