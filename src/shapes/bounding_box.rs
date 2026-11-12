@@ -2,11 +2,15 @@ use crate::traits::Coordinate;
 use std::cmp::Ordering;
 use std::fmt::Display;
 
+/// An axis-aligned `D`-dimensional bounding box.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum BoundingBox<T: Copy + std::fmt::Debug, const D: usize> {
+    /// Covers all of `D`-dimensional space.
     Unbounded,
+    /// Contains no points.
     #[default]
     Empty,
+    /// Bounded along one or more axes by [`DimensionBound`] intervals.
     Bounded([DimensionBound<T>; D]),
 }
 
@@ -14,10 +18,12 @@ impl<T, const D: usize> BoundingBox<T, D>
 where
     T: Coordinate,
 {
+    /// Constructs a validated bounding box from per-axis [`DimensionBound`]s.
     pub fn new_bounded(b: [DimensionBound<T>; D]) -> Result<Self, BoundingBoxError<T>> {
         Self::validated(Self::Bounded(b))
     }
 
+    /// Constructs a bounding box spanning `(offset[i], offset[i] + size[i])` along each axis.
     pub fn new_offset(offset: [T; D], size: [T; D]) -> Self {
         let mut bounding_box = [DimensionBound::Unbounded; D];
         for (bound, (o, s)) in bounding_box.iter_mut().zip(offset.into_iter().zip(size)) {
@@ -26,6 +32,7 @@ where
         Self::Bounded(bounding_box)
     }
 
+    /// Constructs a bounding box centered at `center` with half-extents `extents`.
     pub fn new_centered(center: [T; D], extents: [T; D]) -> Self {
         let mut bounding_box = [DimensionBound::Unbounded; D];
         for (bound, (c, e)) in bounding_box.iter_mut().zip(center.into_iter().zip(extents)) {
@@ -57,6 +64,7 @@ where
         }
     }
 
+    /// Returns `true` if `point` lies strictly inside all axis bounds.
     pub fn within(&self, point: [T; D]) -> bool {
         match self {
             BoundingBox::Unbounded => true,
@@ -65,6 +73,7 @@ where
         }
     }
 
+    /// Computes the smallest [`BoundingBox`] enclosing both `self` and `other`.
     pub fn for_union(&self, other: &Self) -> Result<Self, BoundingBoxError<T>> {
         match (self, other) {
             (BoundingBox::Unbounded, _) | (_, BoundingBox::Unbounded) => Ok(BoundingBox::Unbounded),
@@ -79,6 +88,7 @@ where
         }
     }
 
+    /// Computes the intersection [`BoundingBox`] common to both `self` and `other`.
     pub fn for_intersect(&self, other: &Self) -> Result<Self, BoundingBoxError<T>> {
         match (self, other) {
             (BoundingBox::Unbounded, other) | (other, BoundingBox::Unbounded) => Ok(*other),
@@ -93,6 +103,8 @@ where
         }
     }
 
+    /// Scales each axis bound by `factor`, flipping bounds on negative factors and collapsing to
+    /// [`BoundingBox::Empty`] when any factor is zero or `NaN`.
     pub fn scale(self, factor: [T; D]) -> Self {
         let zero: T = std::iter::empty().sum();
         let is_non_invertible = |f: T| matches!(f.partial_cmp(&zero), Some(Ordering::Equal) | None);
@@ -120,6 +132,7 @@ where
         }
     }
 
+    /// Translates each axis bound by `offset`.
     pub fn translate(self, offset: [T; D]) -> Self {
         match self {
             BoundingBox::Unbounded => BoundingBox::Unbounded,
@@ -134,13 +147,19 @@ where
     }
 }
 
+/// One-dimensional open interval bound along a single coordinate axis.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum DimensionBound<T> {
+    /// Contains no coordinates along this axis.
     #[default]
     Empty,
+    /// Unconstrained (`(-∞, +∞)`) along this axis.
     Unbounded,
+    /// Strictly greater than the given lower bound (`(min, +∞)`).
     Min(T),
+    /// Strictly less than the given upper bound (`(-∞, max)`).
     Max(T),
+    /// Strictly between the given lower and upper bounds (`(min, max)`).
     Range(T, T),
 }
 
@@ -276,8 +295,10 @@ where
     }
 }
 
+/// Error returned when comparing bounding box coordinates fails (e.g., due to `NaN`).
 #[derive(thiserror::Error, Debug)]
 pub enum BoundingBoxError<T: Display> {
+    /// Two coordinate values had no total ordering (`partial_cmp` returned `None`).
     #[error("Partial comparison failed: {0}, {1}")]
     PartialCmpFailed(T, T),
 }

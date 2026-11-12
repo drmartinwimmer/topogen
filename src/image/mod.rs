@@ -1,3 +1,4 @@
+/// `palette` color-space conversions into `image` pixel types.
 #[cfg(feature = "palette")]
 pub mod palette;
 
@@ -10,19 +11,27 @@ use std::cmp::Ordering;
 use std::fmt::Display;
 use std::path::Path;
 
+/// Owned `image::ImageBuffer` backed by a `Vec` of subpixels for pixel type `P`.
 pub type RenderedImage<P> = ImageBuffer<P, Vec<<P as Pixel>::Subpixel>>;
 
+/// Renders bounded 2D generators to in-memory [`ImageBuffer`]s or image files on disk.
 pub trait Image<T: Display>: Generator<[T; 2]> {
+    /// Output `image::Pixel` type produced for each sampled coordinate.
     type Pixel: Pixel;
 
+    /// Samples this bounded 2D generator on a grid spaced by `step` into an [`ImageBuffer`].
     fn render_image(&self, step: [T; 2])
     -> Result<RenderedImage<Self::Pixel>, ImageRenderError<T>>;
 
+    /// Renders this bounded 2D generator with grid spacing `step` and writes it to `path`.
     fn save_image(&self, path: &Path, step: [T; 2]) -> Result<(), ImageRenderError<T>>;
 }
 
+/// Converts a generated color value into an `image` crate pixel.
 pub trait IntoPixel {
+    /// Target `image` pixel type.
     type Pixel;
+    /// Converts `self` into [`Self::Pixel`].
     fn into_pixel(self) -> Self::Pixel;
 }
 
@@ -117,16 +126,22 @@ where
     }
 }
 
+/// Error returned when rendering or saving a 2D generator as an image fails.
 #[derive(thiserror::Error, Debug)]
 pub enum ImageRenderError<T: Display> {
+    /// Underlying `image` crate encoding or I/O failure.
     #[error("Image Error {0:?}")]
     ImageError(#[from] ImageError),
+    /// Bounding box calculation failed.
     #[error("Computing bounds failed")]
     BoundingBoxError(#[from] BoundingBoxError<T>),
+    /// Generator bounding box is empty.
     #[error("Bounding box is empty")]
     EmptyBoundingBox,
+    /// Generator bounding box is unbounded in at least one direction.
     #[error("Bounding box is unbounded in at least one direction")]
     UnboundedBoundingBox,
+    /// Sampling step size had a non-positive or `NaN` component.
     #[error("Step size must be strictly positive, got [{}, {}]", .0[0], .0[1])]
     InvalidStep([T; 2]),
 }

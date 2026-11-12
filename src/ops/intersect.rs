@@ -4,6 +4,7 @@ use crate::{
 };
 use num_traits::Float;
 
+/// Spatial CSG intersection combining multiple [`Bounded`] elements with a reduction closure.
 #[derive(Debug)]
 pub struct Intersect<G, F, T, const D: usize>
 where
@@ -20,6 +21,7 @@ where
     T: Coordinate,
     G: Bounded<T, D>,
 {
+    /// Constructs an [`Intersect`] over `elements`, precomputing their intersected [`BoundingBox`].
     pub fn new(elements: Vec<G>, reducer: F) -> Result<Self, IntersectError<T>> {
         if elements.is_empty() {
             return Ok(Self {
@@ -112,8 +114,10 @@ where
     }
 }
 
+/// Error returned when constructing an [`Intersect`] fails to compute intersected bounds.
 #[derive(thiserror::Error, Debug)]
 pub enum IntersectError<T: std::fmt::Display> {
+    /// Computing the intersected [`BoundingBox`] failed.
     #[error("Bounding box operation failed: {0:?}")]
     UpperBoundFailed(#[from] BoundingBoxError<T>),
 }

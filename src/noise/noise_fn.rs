@@ -2,11 +2,16 @@ use crate::traits::{Coordinate, Euclidean, Generator};
 use noise::{NoiseFn, Perlin as RawPerlin, Simplex as RawSimplex};
 use rand::SeedableRng;
 
+/// Wrapper adapting any [`noise::NoiseFn`] implementation into a `topogen` [`Generator`].
+#[derive(Clone, Copy, Debug)]
 pub struct Noise<N>(N);
+/// Type alias for a `noise::Perlin` generator wrapped in [`Noise`].
 pub type Perlin = Noise<RawPerlin>;
+/// Type alias for a `noise::Simplex` generator wrapped in [`Noise`].
 pub type Simplex = Noise<RawSimplex>;
 
 impl<N> Noise<N> {
+    /// Wraps an existing `noise` crate generator.
     pub fn new(noise: N) -> Self {
         Self(noise)
     }

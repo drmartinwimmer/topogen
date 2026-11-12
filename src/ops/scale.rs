@@ -1,7 +1,8 @@
 use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator};
 
-#[derive(Debug, Euclidean)]
+/// Scales a `D`-dimensional spatial object or generator along each coordinate axis.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean)]
 pub struct Scale<E, T, const D: usize> {
     #[wrap]
     wrapped: E,
@@ -13,6 +14,7 @@ where
     E: Euclidean<T, D>,
     T: Coordinate,
 {
+    /// Scales `wrapped` by per-axis factor `scale`.
     pub fn new(wrapped: E, scale: [T; D]) -> Self {
         Self { wrapped, scale }
     }

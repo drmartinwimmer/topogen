@@ -3,6 +3,7 @@ use crate::{
     traits::{Bounded, Coordinate, Euclidean, Generator},
 };
 
+/// Evaluates two generators at the same input and combines their outputs with a closure.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Zip<A, B, F> {
     a: A,
@@ -11,6 +12,7 @@ pub struct Zip<A, B, F> {
 }
 
 impl<A, B, F> Zip<A, B, F> {
+    /// Combines generators `a` and `b` point-wise using `combiner`.
     pub fn new(a: A, b: B, combiner: F) -> Self {
         Self { a, b, combiner }
     }

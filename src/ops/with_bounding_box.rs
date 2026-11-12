@@ -3,6 +3,7 @@ use crate::{
     traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
 };
 
+/// Overrides a [`Bounded`] generator's reported [`BoundingBox`] and clips evaluation outside it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean, Center)]
 pub struct WithBoundingBox<B, T, const D: usize>
 where
@@ -19,6 +20,7 @@ where
     B: Bounded<T, D>,
     T: Coordinate,
 {
+    /// Clips `bounded` to `bounding_box`.
     pub fn new(bounded: B, bounding_box: BoundingBox<T, D>) -> Self {
         Self {
             bounded,

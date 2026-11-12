@@ -4,6 +4,7 @@ use crate::{
 };
 use std::marker::PhantomData;
 
+/// Restricts a spatial generator's domain to another [`Bounded`] region, returning `Default::default()` outside.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean, Center)]
 pub struct BoundTo<W, B, T, const D: usize>
 where
@@ -23,6 +24,7 @@ where
     B: Bounded<T, D>,
     T: Coordinate,
 {
+    /// Wraps `wrapped` with the membership predicate and bounding box of `bound_to`.
     pub fn new(wrapped: W, bound_to: B) -> Self {
         Self {
             t: PhantomData,

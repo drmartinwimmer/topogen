@@ -1,6 +1,8 @@
 use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 
+/// A lightweight reference adapter forwarding spatial and generator traits without consuming the
+/// underlying value.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Ref<'a, F> {
     referenced: &'a F,
@@ -15,6 +17,7 @@ impl<F> Clone for Ref<'_, F> {
 impl<F> Copy for Ref<'_, F> {}
 
 impl<'a, F> Ref<'a, F> {
+    /// Wraps a shared reference so combinators can be chained without moving `referenced`.
     pub fn new(referenced: &'a F) -> Self {
         Self { referenced }
     }

@@ -3,6 +3,8 @@ use rand_pcg::{Lcg64Xsh32, Pcg32};
 
 use crate::traits::{Euclidean, Generator};
 
+/// Deterministic 256-entry permutation table mapping `D`-dimensional `u8` lattice coordinates to hashed indices.
+#[derive(Clone, Debug, PartialEq, Eq)]
 // 256-byte lookup table intentionally omits Copy to avoid implicit 256-byte stack copies.
 #[expect(
     missing_copy_implementations,

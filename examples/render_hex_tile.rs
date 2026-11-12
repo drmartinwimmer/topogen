@@ -1,5 +1,4 @@
-extern crate image;
-extern crate topogen;
+//! Example blending terrain weights across neighboring hex tiles using distance maps and [`Union`].
 
 use palette::{Hsl, Hsla, RgbHue};
 use std::path::Path;

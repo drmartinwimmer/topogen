@@ -4,7 +4,9 @@ use crate::{
 };
 use std::cmp::Ordering;
 
+/// Scalar coordinate type supporting modular wrapping into a centered periodic cell.
 pub trait PeriodicCoordinate: Coordinate {
+    /// Wraps `self` into the cell of width `period` centered at `center` (or returns `self` when `period == 0`).
     fn wrap_periodic(self, center: Self, period: Self) -> Self;
 }
 
@@ -71,6 +73,7 @@ impl_signed_periodic!(i8, i16, i32, i64, i128, isize);
 impl_unsigned_periodic!(u8, u16, u32, u64, u128, usize);
 impl_float_periodic!(f32, f64);
 
+/// Periodically tiles an inner spatial object or generator across `D`-dimensional space.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Repeat<E, T, const D: usize>
 where
@@ -85,6 +88,7 @@ impl<E, T, const D: usize> Repeat<E, T, D>
 where
     T: PeriodicCoordinate,
 {
+    /// Tiles `wrapped` around `center` with per-axis `period` (`0` disables repetition on an axis).
     pub fn new(wrapped: E, center: [T; D], period: [T; D]) -> Self {
         Self {
             wrapped,

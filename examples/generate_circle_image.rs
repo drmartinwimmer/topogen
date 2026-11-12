@@ -1,5 +1,4 @@
-extern crate image;
-extern crate topogen;
+//! Example rendering a 2D circle bitmap to `circle.png`.
 
 use std::path::Path;
 use topogen::{

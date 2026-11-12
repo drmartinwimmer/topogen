@@ -1,9 +1,11 @@
 use crate::traits::{Center, Coordinate, Euclidean, Generator, Shape};
 use std::marker::PhantomData;
 
+/// Adapts a [`Shape`] into a [`Generator`] evaluating unsigned exterior [`Shape::distance`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean, Center)]
 pub struct DistanceMap<S, T, const D: usize> {
     i: PhantomData<[T; D]>,
+    /// Underlying geometric shape.
     #[wrap]
     pub shape: S,
 }
@@ -29,9 +31,11 @@ where
     }
 }
 
+/// Adapts a [`Shape`] into a [`Generator`] evaluating [`Shape::signed_distance`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean, Center)]
 pub struct SignedDistanceMap<S, T, const D: usize> {
     i: PhantomData<[T; D]>,
+    /// Underlying geometric shape.
     #[wrap]
     pub shape: S,
 }
@@ -57,9 +61,11 @@ where
     }
 }
 
+/// Adapts a [`Center`] object into a [`Generator`] evaluating Euclidean [`Center::center_distance`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CenterDistanceMap<C, T, const D: usize> {
     i: PhantomData<[T; D]>,
+    /// Underlying centered object.
     pub center: C,
 }
 

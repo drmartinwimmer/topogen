@@ -1,6 +1,7 @@
 use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, EuclideanVec, Generator, Shape};
 
+/// Translates a `D`-dimensional spatial object or generator by a fixed offset vector.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean)]
 pub struct Translate<E, T, const D: usize> {
     #[wrap]
@@ -13,6 +14,7 @@ where
     E: Euclidean<T, D>,
     T: Coordinate,
 {
+    /// Translates `wrapped` by `offset`.
     pub fn new(wrapped: E, offset: [T; D]) -> Self {
         Self { wrapped, offset }
     }

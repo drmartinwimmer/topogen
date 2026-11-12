@@ -2,11 +2,15 @@ use crate::ops;
 
 pub use topogen_derive::Generator;
 
+/// Evaluates a procedural value of type [`Self::Output`] for any input `I`.
 pub trait Generator<I>: Sized {
+    /// Output value produced at each evaluated input.
     type Output;
 
+    /// Evaluates the generator at `input`.
     fn generate(&self, input: I) -> Self::Output;
 
+    /// Transforms each generated output value using `f`.
     fn map<O, F>(self, f: F) -> ops::Map<Self, F>
     where
         Self: Sized,
@@ -15,6 +19,7 @@ pub trait Generator<I>: Sized {
         ops::Map::new(self, f)
     }
 
+    /// Adapts the generator to accept inputs of type `NI` mapped to `I` via `f`.
     fn map_input<NI, F>(self, f: F) -> ops::MapInput<Self, F>
     where
         Self: Sized,
@@ -23,10 +28,12 @@ pub trait Generator<I>: Sized {
         ops::MapInput::new(self, f)
     }
 
+    /// Clamps generated output values into the closed interval `[min, max]`.
     fn clamp(self, min: Self::Output, max: Self::Output) -> ops::Clamp<Self, I> {
         ops::Clamp::new(self, min, max)
     }
 
+    /// Evaluates `self` and `other` at the same `Copy` input and combines their outputs with `combiner`.
     fn zip<B, O, F>(self, other: B, combiner: F) -> ops::Zip<Self, B, F>
     where
         I: Copy,
