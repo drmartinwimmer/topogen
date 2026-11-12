@@ -205,9 +205,9 @@ mod tests {
         expect_that!(repeated_f64.generate([9.0, 10.0]), is_false());
         expect_that!(
             repeated_f64.bounding_box(),
-            matches_pattern!(BoundingBox::Bounded(elements_are![
-                matches_pattern!(DimensionBound::Unbounded),
-                matches_pattern!(DimensionBound::Range(eq(&-2.5), eq(&2.5))),
+            eq(BoundingBox::Bounded([
+                DimensionBound::Unbounded,
+                DimensionBound::Range(-2.5, 2.5),
             ]))
         );
 

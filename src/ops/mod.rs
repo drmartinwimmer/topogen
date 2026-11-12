@@ -14,7 +14,7 @@ mod with_bounding_box;
 pub use bitmap::Bitmap;
 pub use bound_to::BoundTo;
 pub use clamp::Clamp;
-pub use distance_map::{CenterDistanceMap, DistanceMap};
+pub use distance_map::{CenterDistanceMap, DistanceMap, SignedDistanceMap};
 pub use fbm::Fbm;
 pub use intersect::{Intersect, IntersectError};
 pub use map::{Map, MapInput};

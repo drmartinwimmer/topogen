@@ -1,10 +1,18 @@
 use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 
-#[derive(Clone)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Ref<'a, F> {
     referenced: &'a F,
 }
+
+impl<F> Clone for Ref<'_, F> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<F> Copy for Ref<'_, F> {}
 
 impl<'a, F> Ref<'a, F> {
     pub fn new(referenced: &'a F) -> Self {
@@ -12,7 +20,7 @@ impl<'a, F> Ref<'a, F> {
     }
 }
 
-impl<'a, G: Generator<I>, I> Generator<I> for Ref<'a, G> {
+impl<G: Generator<I>, I> Generator<I> for Ref<'_, G> {
     type Output = G::Output;
 
     fn generate(&self, input: I) -> G::Output {
@@ -20,9 +28,9 @@ impl<'a, G: Generator<I>, I> Generator<I> for Ref<'a, G> {
     }
 }
 
-impl<'a, E, T: Coordinate, const D: usize> Euclidean<T, D> for Ref<'a, E> where E: Euclidean<T, D> {}
+impl<E, T: Coordinate, const D: usize> Euclidean<T, D> for Ref<'_, E> where E: Euclidean<T, D> {}
 
-impl<'a, B, T, const D: usize> Bounded<T, D> for Ref<'a, B>
+impl<B, T, const D: usize> Bounded<T, D> for Ref<'_, B>
 where
     T: Coordinate,
     B: Bounded<T, D>,
@@ -36,7 +44,7 @@ where
     }
 }
 
-impl<'a, C, T, const D: usize> Center<T, D> for Ref<'a, C>
+impl<C, T, const D: usize> Center<T, D> for Ref<'_, C>
 where
     T: Coordinate,
     C: Center<T, D>,
@@ -46,7 +54,7 @@ where
     }
 }
 
-impl<'a, S, T, const D: usize> Shape<T, D> for Ref<'a, S>
+impl<S, T, const D: usize> Shape<T, D> for Ref<'_, S>
 where
     T: Coordinate,
     S: Shape<T, D>,
@@ -56,6 +64,13 @@ where
         T: num_traits::Float,
     {
         self.referenced.distance(point)
+    }
+
+    fn signed_distance(&self, point: [T; D]) -> T
+    where
+        T: num_traits::Float,
+    {
+        self.referenced.signed_distance(point)
     }
 }
 
@@ -77,6 +92,7 @@ mod tests {
         expect_that!(borrowed.center(), eq([1.0, -1.0]));
         expect_that!(borrowed.within([2.0, -1.0]), is_true());
         expect_that!(borrowed.distance([5.0, -1.0]), eq(1.0));
+        expect_that!(borrowed.signed_distance([1.0, -1.0]), eq(-3.0));
         let bitmap = sphere.by_ref().bitmap();
         expect_that!(bitmap.generate([2.0, -1.0]), is_true());
         expect_that!(sphere.within([2.0, -1.0]), is_true());

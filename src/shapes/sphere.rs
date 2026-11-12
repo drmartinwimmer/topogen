@@ -1,7 +1,7 @@
 use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Shape};
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Sphere<T, const D: usize> {
     pub radius: T,
     pub center: [T; D],
@@ -39,9 +39,16 @@ where
 {
     fn distance(&self, point: [T; D]) -> T
     where
-        T: num_traits::Zero + num_traits::Float,
+        T: num_traits::Float,
     {
-        T::max(self.center_distance(point) - self.radius, T::zero())
+        T::max(self.signed_distance(point), T::zero())
+    }
+
+    fn signed_distance(&self, point: [T; D]) -> T
+    where
+        T: num_traits::Float,
+    {
+        self.center_distance(point) - self.radius
     }
 }
 
@@ -175,5 +182,16 @@ mod tests {
         expect_that!(sphere.center_distance([0.0, 0.0]), eq(5.0));
         expect_that!(sphere.center_distance([3.0, 4.0]), eq(0.0));
         expect_that!(sphere.center_distance([4.0, 4.0]), eq(1.0));
+    }
+
+    #[googletest::test]
+    fn returns_sphere_signed_distance() {
+        let sphere = Sphere {
+            radius: 2.0_f64,
+            center: [0.0, 0.0],
+        };
+        expect_that!(sphere.signed_distance([0.0, 0.0]), eq(-2.0));
+        expect_that!(sphere.signed_distance([2.0, 0.0]), eq(0.0));
+        expect_that!(sphere.signed_distance([3.0, 4.0]), eq(3.0));
     }
 }

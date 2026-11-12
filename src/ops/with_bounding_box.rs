@@ -3,7 +3,7 @@ use crate::{
     traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape},
 };
 
-#[derive(Euclidean, Center)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean, Center)]
 pub struct WithBoundingBox<B, T, const D: usize>
 where
     B: Bounded<T, D>,
@@ -33,7 +33,7 @@ where
     T: Coordinate,
 {
     fn bounding_box(&self) -> BoundingBox<T, D> {
-        self.bounding_box.clone()
+        self.bounding_box
     }
 
     fn within(&self, point: [T; D]) -> bool {
@@ -51,6 +51,13 @@ where
         T: num_traits::Float,
     {
         self.bounded.distance(point)
+    }
+
+    fn signed_distance(&self, point: [T; D]) -> T
+    where
+        T: num_traits::Float,
+    {
+        self.bounded.signed_distance(point)
     }
 }
 

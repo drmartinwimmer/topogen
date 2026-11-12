@@ -1,31 +1,48 @@
-use syn::{Data, DeriveInput, Field, GenericParam, Generics, WherePredicate, parse_quote};
+use syn::{
+    Data, DeriveInput, Error, Field, GenericParam, Generics, Result, WherePredicate, parse_quote,
+};
 
-pub fn find_wrapped(input: &DeriveInput) -> Option<&Field> {
-    if let Data::Struct(s) = &input.data {
-        for field in s.fields.iter() {
-            if field.attrs.iter().any(|attr| attr.path().is_ident("wrap")) {
-                return Some(field);
-            }
-        }
+pub fn find_wrapped(input: &DeriveInput) -> Result<&Field> {
+    let Data::Struct(data_struct) = &input.data else {
+        return Err(Error::new_spanned(
+            input,
+            "wrapper derive macros can only be applied to structs",
+        ));
+    };
+    let mut wrapped_fields = data_struct
+        .fields
+        .iter()
+        .filter(|field| field.attrs.iter().any(|attr| attr.path().is_ident("wrap")));
+    let Some(first) = wrapped_fields.next() else {
+        return Err(Error::new_spanned(
+            input,
+            "expected exactly one field annotated with #[wrap]",
+        ));
+    };
+    if let Some(duplicate) = wrapped_fields.next() {
+        return Err(Error::new_spanned(
+            duplicate,
+            "at most one field may be annotated with #[wrap]",
+        ));
     }
-    None
+    Ok(first)
 }
 
 pub fn create_forward_generics(input: &DeriveInput) -> Generics {
     let mut forward_generics = Generics::default();
-    for param in input.generics.params.iter() {
+    for param in &input.generics.params {
         match param {
             syn::GenericParam::Type(ty) => {
                 let ident = &ty.ident;
-                forward_generics.params.push(parse_quote!(#ident))
+                forward_generics.params.push(parse_quote!(#ident));
             }
             syn::GenericParam::Const(ty) => {
                 let ident = &ty.ident;
-                forward_generics.params.push(parse_quote!(#ident))
+                forward_generics.params.push(parse_quote!(#ident));
             }
             syn::GenericParam::Lifetime(ty) => {
                 let ident = &ty.lifetime;
-                forward_generics.params.push(parse_quote!(#ident))
+                forward_generics.params.push(parse_quote!(#ident));
             }
         }
     }

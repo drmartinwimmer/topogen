@@ -4,7 +4,7 @@ use crate::{
 };
 use std::marker::PhantomData;
 
-#[derive(Euclidean, Center)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean, Center)]
 pub struct BoundTo<W, B, T, const D: usize>
 where
     W: Euclidean<T, D>,
@@ -58,6 +58,13 @@ where
         T: num_traits::Float,
     {
         self.wrapped.distance(point)
+    }
+
+    fn signed_distance(&self, point: [T; D]) -> T
+    where
+        T: num_traits::Float,
+    {
+        self.wrapped.signed_distance(point)
     }
 }
 

@@ -5,7 +5,10 @@ use syn::{DeriveInput, parse_quote};
 
 pub fn shape(input: DeriveInput) -> TokenStream {
     let name = &input.ident;
-    let wrapped = find_wrapped(&input).expect("Failed to find a field with the #[wrap] attribute");
+    let wrapped = match find_wrapped(&input) {
+        Ok(field) => field,
+        Err(err) => return err.to_compile_error(),
+    };
     let wrapped_id = &wrapped.ident;
     let wrapped_ty = &wrapped.ty;
     let forward_generics = create_forward_generics(&input);
@@ -25,6 +28,11 @@ pub fn shape(input: DeriveInput) -> TokenStream {
             fn distance(&self, point: [EuclideanCoordinate; EuclideanDim]) -> EuclideanCoordinate
             where EuclideanCoordinate: num_traits::Float {
                 self. #wrapped_id .distance(point)
+            }
+
+            fn signed_distance(&self, point: [EuclideanCoordinate; EuclideanDim]) -> EuclideanCoordinate
+            where EuclideanCoordinate: num_traits::Float {
+                self. #wrapped_id .signed_distance(point)
             }
         }
     }
@@ -62,9 +70,39 @@ mod tests {
                 where EuclideanCoordinate: num_traits::Float {
                     self.generator.distance(point)
                 }
+
+                fn signed_distance(&self, point: [EuclideanCoordinate; EuclideanDim]) -> EuclideanCoordinate
+                where EuclideanCoordinate: num_traits::Float {
+                    self.generator.signed_distance(point)
+                }
             }
         };
         let output = shape(input);
         expect_that!(output.to_string(), eq(&expected.to_string()));
+    }
+
+    #[googletest::test]
+    fn shape_without_wrap_attribute_emits_compile_error() {
+        let input = parse_quote! {
+            pub struct MissingWrap<S> {
+                generator: S,
+            }
+        };
+        let output = shape(input).to_string();
+        expect_that!(output, contains_substring("compile_error"));
+    }
+
+    #[googletest::test]
+    fn shape_with_duplicate_wrap_attributes_emits_compile_error() {
+        let input = parse_quote! {
+            pub struct DuplicateWrap<S> {
+                #[wrap]
+                first: S,
+                #[wrap]
+                second: S,
+            }
+        };
+        let output = shape(input).to_string();
+        expect_that!(output, contains_substring("compile_error"));
     }
 }

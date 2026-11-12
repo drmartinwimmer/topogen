@@ -80,7 +80,7 @@ where
     }
 
     fn bounding_box(&self) -> BoundingBox<T, D> {
-        self.bounding_box.clone()
+        self.bounding_box
     }
 }
 
@@ -96,6 +96,17 @@ where
         self.elements
             .iter()
             .map(|e| e.distance(point))
+            .reduce(Float::max)
+            .unwrap_or(T::infinity())
+    }
+
+    fn signed_distance(&self, point: [T; D]) -> T
+    where
+        T: Float,
+    {
+        self.elements
+            .iter()
+            .map(|e| e.signed_distance(point))
             .reduce(Float::max)
             .unwrap_or(T::infinity())
     }
@@ -137,9 +148,9 @@ mod tests {
         expect_that!(overlap.within([2, 0]), is_false());
         expect_that!(
             overlap.bounding_box(),
-            matches_pattern!(BoundingBox::Bounded(elements_are![
-                matches_pattern!(DimensionBound::Range(eq(&-2), eq(&2))),
-                matches_pattern!(DimensionBound::Range(eq(&-3), eq(&3))),
+            eq(BoundingBox::Bounded([
+                DimensionBound::Range(-2, 2),
+                DimensionBound::Range(-3, 3),
             ]))
         );
         Ok(())
@@ -167,6 +178,19 @@ mod tests {
         );
         expect_that!(disjoint.within([0.0, 0.0]), is_false());
         expect_that!(disjoint.distance([0.0, 0.0]), near(3.0, 1e-12));
+        expect_that!(disjoint.signed_distance([0.0, 0.0]), near(3.0, 1e-12));
+
+        let c1 = Cuboid {
+            center: [-1.0_f64, 0.0],
+            extents: [3.0, 3.0],
+        };
+        let c2 = Cuboid {
+            center: [1.0_f64, 0.0],
+            extents: [3.0, 3.0],
+        };
+        let overlap = c1.intersect(vec![c2], |x: (), ()| x)?;
+        expect_that!(overlap.signed_distance([0.0, 0.0]), near(-2.0, 1e-12));
+        expect_that!(overlap.signed_distance([2.0, 0.0]), near(0.0, 1e-12));
         Ok(())
     }
 }

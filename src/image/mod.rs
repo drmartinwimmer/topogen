@@ -6,11 +6,19 @@ use num_traits::AsPrimitive;
 
 use crate::shapes::{BoundingBox, BoundingBoxError, DimensionBound};
 use crate::traits::{Bounded, Coordinate, Generator};
+use std::cmp::Ordering;
 use std::fmt::Display;
 use std::path::Path;
 
+pub type RenderedImage<P> = ImageBuffer<P, Vec<<P as Pixel>::Subpixel>>;
+
 pub trait Image<T: Display>: Generator<[T; 2]> {
-    fn save_image(self, path: &Path, step: [T; 2]) -> Result<(), ImageRenderError<T>>;
+    type Pixel: Pixel;
+
+    fn render_image(&self, step: [T; 2])
+    -> Result<RenderedImage<Self::Pixel>, ImageRenderError<T>>;
+
+    fn save_image(&self, path: &Path, step: [T; 2]) -> Result<(), ImageRenderError<T>>;
 }
 
 pub trait IntoPixel {
@@ -55,7 +63,19 @@ where
     C::Pixel: PixelWithColorType,
     [<C::Pixel as Pixel>::Subpixel]: EncodableLayout,
 {
-    fn save_image(self, path: &Path, step: [T; 2]) -> Result<(), ImageRenderError<T>> {
+    type Pixel = C::Pixel;
+
+    fn render_image(
+        &self,
+        step: [T; 2],
+    ) -> Result<RenderedImage<Self::Pixel>, ImageRenderError<T>> {
+        let zero = T::default();
+        if step
+            .iter()
+            .any(|s| !matches!(s.partial_cmp(&zero), Some(Ordering::Greater)))
+        {
+            return Err(ImageRenderError::InvalidStep(step));
+        }
         let bounds = match self.bounding_box() {
             BoundingBox::Empty => return Err(ImageRenderError::EmptyBoundingBox),
             BoundingBox::Unbounded => return Err(ImageRenderError::UnboundedBoundingBox),
@@ -80,10 +100,7 @@ where
             min[0] + (max[0] - min[0] - size[0]) / two,
             min[1] + (max[1] - min[1] - size[1]) / two,
         ];
-        let mut image = ImageBuffer::<C::Pixel, Vec<<C::Pixel as Pixel>::Subpixel>>::new(
-            steps[0].as_(),
-            steps[1].as_(),
-        );
+        let mut image = RenderedImage::<C::Pixel>::new(steps[0].as_(), steps[1].as_());
         for ix in 0..steps[0].as_() {
             let gx = min[0] + ix.as_() * step[0];
             for iy in 0..steps[1].as_() {
@@ -91,7 +108,11 @@ where
                 image.put_pixel(ix, iy, self.generate([gx, gy]).into_pixel());
             }
         }
-        image.save(path)?;
+        Ok(image)
+    }
+
+    fn save_image(&self, path: &Path, step: [T; 2]) -> Result<(), ImageRenderError<T>> {
+        self.render_image(step)?.save(path)?;
         Ok(())
     }
 }
@@ -106,11 +127,13 @@ pub enum ImageRenderError<T: Display> {
     EmptyBoundingBox,
     #[error("Bounding box is unbounded in at least one direction")]
     UnboundedBoundingBox,
+    #[error("Step size must be strictly positive, got [{}, {}]", .0[0], .0[1])]
+    InvalidStep([T; 2]),
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Image;
+    use super::{Image, ImageRenderError};
     use crate::{
         shapes::Cuboid,
         traits::{Bounded, Generator},
@@ -128,12 +151,22 @@ mod tests {
             true => image::Rgb([255_u8, 255, 255]),
             false => image::Rgb([0_u8, 0, 0]),
         });
+        let rendered = image.render_image([1, 1])?;
+        expect_that!(rendered.width(), eq(4));
+        expect_that!(rendered.height(), eq(4));
+
         let tempfile = Builder::new().suffix(".png").tempfile()?;
         image.save_image(tempfile.path(), [1, 1])?;
 
         let saved_image = image::open(tempfile.path())?;
         expect_that!(saved_image.width(), eq(4));
         expect_that!(saved_image.height(), eq(4));
+        expect_that!(
+            image.render_image([0, 1]),
+            err(matches_pattern!(ImageRenderError::InvalidStep(
+                elements_are![eq(&0), eq(&1)]
+            )))
+        );
         Ok(())
     }
 }
