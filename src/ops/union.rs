@@ -2,6 +2,7 @@ use crate::{
     shapes::{BoundingBox, BoundingBoxError},
     traits::{Bounded, Coordinate, Euclidean, Generator, Shape},
 };
+use num_traits::Float;
 
 #[derive(Debug)]
 pub struct Union<G, F, T, const D: usize>
@@ -82,12 +83,12 @@ where
 {
     fn distance(&self, point: [T; D]) -> T
     where
-        T: num_traits::Float,
+        T: Float,
     {
         self.elements
             .iter()
             .map(|e| e.distance(point))
-            .reduce(|a, b| a.min(b))
+            .reduce(Float::min)
             .unwrap_or(T::infinity())
     }
 }

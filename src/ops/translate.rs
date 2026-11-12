@@ -1,3 +1,4 @@
+use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, EuclideanVec, Generator};
 
 #[derive(Debug, Euclidean)]
@@ -26,7 +27,7 @@ where
         self.wrapped.within(input.sub(self.offset))
     }
 
-    fn bounding_box(&self) -> crate::shapes::BoundingBox<T, D> {
+    fn bounding_box(&self) -> BoundingBox<T, D> {
         self.wrapped.bounding_box().translate(self.offset)
     }
 }

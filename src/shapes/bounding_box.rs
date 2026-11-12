@@ -19,16 +19,16 @@ where
 
     pub fn new_offset(offset: [T; D], size: [T; D]) -> Self {
         let mut bounding_box = [DimensionBound::Unbounded; D];
-        for i in 0..D {
-            bounding_box[i] = DimensionBound::Range(offset[i], offset[i] + size[i]);
+        for (bound, (o, s)) in bounding_box.iter_mut().zip(offset.into_iter().zip(size)) {
+            *bound = DimensionBound::Range(o, o + s);
         }
         Self::Bounded(bounding_box)
     }
 
     pub fn new_centered(center: [T; D], extents: [T; D]) -> Self {
         let mut bounding_box = [DimensionBound::Unbounded; D];
-        for i in 0..D {
-            bounding_box[i] = DimensionBound::Range(center[i] - extents[i], center[i] + extents[i]);
+        for (bound, (c, e)) in bounding_box.iter_mut().zip(center.into_iter().zip(extents)) {
+            *bound = DimensionBound::Range(c - e, c + e);
         }
         Self::Bounded(bounding_box)
     }
@@ -70,8 +70,8 @@ where
             (BoundingBox::Empty, other) | (other, BoundingBox::Empty) => Ok(other.clone()),
             (BoundingBox::Bounded(b1), BoundingBox::Bounded(b2)) => {
                 let mut union = [DimensionBound::Empty; D];
-                for i in 0..D {
-                    union[i] = b1[i].for_union(b2[i])?;
+                for (out, (d1, d2)) in union.iter_mut().zip(b1.iter().zip(b2.iter())) {
+                    *out = d1.for_union(*d2)?;
                 }
                 BoundingBox::new_bounded(union)
             }
@@ -84,8 +84,8 @@ where
             (BoundingBox::Empty, _) | (_, BoundingBox::Empty) => Ok(BoundingBox::Empty),
             (BoundingBox::Bounded(b1), BoundingBox::Bounded(b2)) => {
                 let mut intersect = [DimensionBound::Unbounded; D];
-                for i in 0..D {
-                    intersect[i] = b1[i].for_intersect(b2[i])?;
+                for (out, (d1, d2)) in intersect.iter_mut().zip(b1.iter().zip(b2.iter())) {
+                    *out = d1.for_intersect(*d2)?;
                 }
                 BoundingBox::new_bounded(intersect)
             }
@@ -119,19 +119,14 @@ where
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum DimensionBound<T> {
+    #[default]
     Empty,
     Unbounded,
     Min(T),
     Max(T),
     Range(T, T),
-}
-
-impl<T> Default for DimensionBound<T> {
-    fn default() -> Self {
-        Self::Empty
-    }
 }
 
 fn min<T>(a: T, b: T) -> Result<T, Error<T>>

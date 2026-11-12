@@ -1,9 +1,10 @@
 #[cfg(feature = "palette")]
 pub mod palette;
 
+use image::{EncodableLayout, ImageBuffer, ImageError, Pixel, PixelWithColorType};
 use num_traits::AsPrimitive;
 
-use crate::shapes::{BoundingBox, DimensionBound};
+use crate::shapes::{BoundingBox, BoundingBoxError, DimensionBound};
 use crate::traits::{Bounded, Coordinate, Generator};
 use std::fmt::Display;
 use std::path::Path;
@@ -51,8 +52,8 @@ where
     u32: AsPrimitive<T>,
     G: Generator<[T; 2], Output = C> + Bounded<T, 2>,
     C: IntoPixel,
-    C::Pixel: image::PixelWithColorType,
-    [<C::Pixel as image::Pixel>::Subpixel]: image::EncodableLayout,
+    C::Pixel: PixelWithColorType,
+    [<C::Pixel as Pixel>::Subpixel]: EncodableLayout,
 {
     fn save_image(self, path: &Path, step: [T; 2]) -> Result<(), Error<T>> {
         let bounds = match self.bounding_box() {
@@ -60,14 +61,18 @@ where
             BoundingBox::Unbounded => return Err(Error::UnboundedBoundingBox),
             BoundingBox::Bounded(bounds) => bounds,
         };
-        let (mut min, mut max) = ([T::default(); 2], [T::default(); 2]);
-        for i in 0..2 {
-            (min[i], max[i]) = match bounds[i] {
-                DimensionBound::Range(min, max) => (min, max),
-                DimensionBound::Empty => return Err(Error::EmptyBoundingBox),
-                _ => return Err(Error::UnboundedBoundingBox),
-            };
-        }
+        let extract_range = |bound: DimensionBound<T>| match bound {
+            DimensionBound::Range(min, max) => Ok((min, max)),
+            DimensionBound::Empty => Err(Error::EmptyBoundingBox),
+            DimensionBound::Unbounded | DimensionBound::Min(_) | DimensionBound::Max(_) => {
+                Err(Error::UnboundedBoundingBox)
+            }
+        };
+        let [bound_x, bound_y] = bounds;
+        let (min_x, max_x) = extract_range(bound_x)?;
+        let (min_y, max_y) = extract_range(bound_y)?;
+        let mut min = [min_x, min_y];
+        let max = [max_x, max_y];
         let steps = [((max[0] - min[0]) / step[0]), ((max[1] - min[1]) / step[1])];
         let size = [steps[0] as T * step[0], steps[1] as T * step[1]];
         let two: T = T::one() + T::one();
@@ -75,11 +80,10 @@ where
             min[0] + (max[0] - min[0] - size[0]) / two,
             min[1] + (max[1] - min[1] - size[1]) / two,
         ];
-        let mut image =
-            image::ImageBuffer::<C::Pixel, Vec<<C::Pixel as image::Pixel>::Subpixel>>::new(
-                steps[0].as_(),
-                steps[1].as_(),
-            );
+        let mut image = ImageBuffer::<C::Pixel, Vec<<C::Pixel as Pixel>::Subpixel>>::new(
+            steps[0].as_(),
+            steps[1].as_(),
+        );
         for ix in 0..steps[0].as_() {
             let gx = min[0] + ix.as_() * step[0];
             for iy in 0..steps[1].as_() {
@@ -95,9 +99,9 @@ where
 #[derive(thiserror::Error, Debug)]
 pub enum Error<T: Display> {
     #[error("Image Error {0:?}")]
-    ImageError(#[from] image::ImageError),
+    ImageError(#[from] ImageError),
     #[error("Computing bounds failed")]
-    BoundingBoxError(#[from] crate::shapes::BoundingBoxError<T>),
+    BoundingBoxError(#[from] BoundingBoxError<T>),
     #[error("Bounding box is empty")]
     EmptyBoundingBox,
     #[error("Bounding box is unbounded in at least one direction")]

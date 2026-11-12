@@ -1,4 +1,4 @@
-use syn::{parse_quote, Data, DeriveInput, Field, GenericParam, Generics, WherePredicate};
+use syn::{Data, DeriveInput, Field, GenericParam, Generics, WherePredicate, parse_quote};
 
 pub fn find_wrapped(input: &DeriveInput) -> Option<&Field> {
     if let Data::Struct(s) = &input.data {
