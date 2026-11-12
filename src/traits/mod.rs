@@ -5,6 +5,7 @@ mod euclidean;
 mod generator;
 mod shape;
 
+pub use crate::ops::PeriodicCoordinate;
 pub use bound::Bounded;
 pub use by_ref::ByRef;
 pub use center::Center;
