@@ -5,7 +5,8 @@ use std::{
     ops::{AddAssign, Div, Mul, MulAssign},
 };
 
-#[derive(Euclidean)]
+/// Fractional Brownian motion (`fBm`) multi-octave fractal sum over a spatial [`Generator`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean)]
 pub struct Fbm<G, T, const D: usize>
 where
     G: Generator<[T; D]> + Euclidean<T, D>,
@@ -24,6 +25,8 @@ where
     G: Generator<[T; D]> + Euclidean<T, D>,
     T: Coordinate,
 {
+    /// Creates a normalized `octaves`-layer fBm generator with frequency multiplier `lacunarity`
+    /// and amplitude decay `gain`.
     pub fn new(generator: G, octaves: usize, lacunarity: T, gain: G::Output) -> Self {
         Self {
             generator,

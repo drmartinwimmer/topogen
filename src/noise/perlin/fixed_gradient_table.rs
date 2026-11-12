@@ -3,6 +3,8 @@ use std::marker::PhantomData;
 
 use super::GradientTable;
 
+/// Standard Ken Perlin fixed gradient vector lookup table for 1D, 2D, and 3D noise.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FixedGradientTable<O: Float, const D: usize> {
     _output: PhantomData<[O; D]>,
 }
@@ -14,6 +16,7 @@ impl<O: Float, const D: usize> Default for FixedGradientTable<O, D> {
 }
 
 impl<O: Float, const D: usize> FixedGradientTable<O, D> {
+    /// Creates a new [`FixedGradientTable`].
     pub fn new() -> Self {
         Self {
             _output: PhantomData,

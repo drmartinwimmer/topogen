@@ -1,11 +1,14 @@
 use crate::traits::{Center, Coordinate, Euclidean};
 
+/// A single `D`-dimensional point in Euclidean space.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Point<T, const D: usize> {
+    /// Cartesian coordinates of the point.
     pub coordinates: [T; D],
 }
 
 impl<T, const D: usize> Point<T, D> {
+    /// Creates a point at `coordinates`.
     pub fn new(coordinates: [T; D]) -> Point<T, D> {
         Point { coordinates }
     }

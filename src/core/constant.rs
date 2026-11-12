@@ -4,8 +4,10 @@ use crate::{
 };
 use std::marker::PhantomData;
 
+/// A generator that returns a constant `Copy` value for every input coordinate.
 #[derive(Debug)]
 pub struct Constant<V: Copy, I = V> {
+    /// Constant output value returned by [`Generator::generate`].
     pub value: V,
     input: PhantomData<fn(I)>,
 }
@@ -27,6 +29,7 @@ impl<V: Copy + PartialEq, I> PartialEq for Constant<V, I> {
 impl<V: Copy + Eq, I> Eq for Constant<V, I> {}
 
 impl<V: Copy, I> Constant<V, I> {
+    /// Creates a generator that always yields `value`.
     pub fn new(value: V) -> Self {
         Self {
             value,

@@ -35,6 +35,7 @@ tempfile = "3.10"
 
 [workspace.lints.rust]
 missing_copy_implementations = "warn"
+missing_docs = "warn"
 
 [workspace.lints.clippy]
 # Don't Panic - prevent panics from unwraps and unsafe slicing or indexing

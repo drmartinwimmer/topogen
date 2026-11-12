@@ -1,6 +1,6 @@
 mod fixed_gradient_table;
 
-use self::fixed_gradient_table::FixedGradientTable;
+pub use self::fixed_gradient_table::FixedGradientTable;
 
 use super::PermutationTable;
 use crate::traits::{Coordinate, Euclidean, EuclideanVec, EuclideanVecFloat, Generator, WrapToU8};
@@ -8,15 +8,21 @@ use num_traits::Float;
 use rand::SeedableRng;
 use std::marker::PhantomData;
 
+/// Interpolation curve used when blending lattice corner gradients in [`ImprovedPerlin`].
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Interpolation {
+    /// Fifth-degree polynomial (`6t⁵ - 15t⁴ + 10t³`) with continuous first and second derivatives.
     #[default]
     Quintic,
+    /// Classic cubic Hermite smoothstep curve (`3t² - 2t³`).
     Smoothstep,
+    /// Linear (`lerp`) interpolation (`t`).
     Linear,
 }
 
+/// Maps hashed 8-bit lattice indices to `D`-dimensional gradient vectors.
 pub trait GradientTable<O: Float, const D: usize> {
+    /// Returns the gradient vector associated with `entry`.
     fn get(&self, entry: u8) -> [O; D];
 }
 
@@ -95,6 +101,7 @@ impl<T: Coordinate + Float + WrapToU8, const D: usize, G: GradientTable<T, D>> P
     }
 }
 
+/// Deterministic 1D, 2D, or 3D Improved Perlin gradient noise generator.
 pub struct ImprovedPerlin<
     T: Coordinate + Float,
     const D: usize,
@@ -105,17 +112,20 @@ pub struct ImprovedPerlin<
 }
 
 impl<T: Coordinate + Float, const D: usize, G: GradientTable<T, D>> ImprovedPerlin<T, D, G> {
+    /// Returns a copy of this generator using `interpolation` for lattice blending.
     pub fn with_interpolation(mut self, interpolation: Interpolation) -> Self {
         self.interpolation = interpolation;
         self
     }
 
+    /// Returns the active [`Interpolation`] mode.
     pub fn interpolation(&self) -> Interpolation {
         self.interpolation
     }
 }
 
 impl<T: Coordinate + Float + WrapToU8> ImprovedPerlin<T, 1, FixedGradientTable<T, 1>> {
+    /// Creates a seeded 1D [`ImprovedPerlin`] generator with default quintic interpolation.
     pub fn new(seed: [u8; 16]) -> Self {
         Self {
             perlin: Perlin::new(seed, FixedGradientTable::new()),
@@ -125,6 +135,7 @@ impl<T: Coordinate + Float + WrapToU8> ImprovedPerlin<T, 1, FixedGradientTable<T
 }
 
 impl<T: Coordinate + Float + WrapToU8> ImprovedPerlin<T, 2, FixedGradientTable<T, 2>> {
+    /// Creates a seeded 2D [`ImprovedPerlin`] generator with default quintic interpolation.
     pub fn new(seed: [u8; 16]) -> Self {
         Self {
             perlin: Perlin::new(seed, FixedGradientTable::new()),
@@ -134,6 +145,7 @@ impl<T: Coordinate + Float + WrapToU8> ImprovedPerlin<T, 2, FixedGradientTable<T
 }
 
 impl<T: Coordinate + Float + WrapToU8> ImprovedPerlin<T, 3, FixedGradientTable<T, 3>> {
+    /// Creates a seeded 3D [`ImprovedPerlin`] generator with default quintic interpolation.
     pub fn new(seed: [u8; 16]) -> Self {
         Self {
             perlin: Perlin::new(seed, FixedGradientTable::new()),

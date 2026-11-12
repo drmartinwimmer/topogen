@@ -4,6 +4,7 @@ use crate::{
 };
 use num_traits::Float;
 
+/// Spatial CSG union combining multiple [`Bounded`] elements with a reduction closure.
 #[derive(Debug)]
 pub struct Union<G, F, T, const D: usize>
 where
@@ -20,6 +21,7 @@ where
     T: Coordinate,
     G: Bounded<T, D>,
 {
+    /// Constructs a [`Union`] over `elements`, precomputing their combined [`BoundingBox`].
     pub fn new(elements: Vec<G>, reducer: F) -> Result<Self, UnionError<T>> {
         let mut bounding_box = BoundingBox::Empty;
         for element in &elements {
@@ -104,8 +106,10 @@ where
     }
 }
 
+/// Error returned when constructing a [`Union`] fails to compute combined bounds.
 #[derive(thiserror::Error, Debug)]
 pub enum UnionError<T: std::fmt::Display> {
+    /// Computing the combined [`BoundingBox`] failed.
     #[error("Bounding box operation failed: {0:?}")]
     UpperBoundFailed(#[from] BoundingBoxError<T>),
 }

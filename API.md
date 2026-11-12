@@ -6,16 +6,16 @@
 
 ### Enums
 
-- `pub enum ImageRenderError< T : Display > { ImageError(ImageError), BoundingBoxError(BoundingBoxError < T >), EmptyBoundingBox, UnboundedBoundingBox, InvalidStep([T ; 2]) }`
+- `pub enum ImageRenderError< T : Display > { ImageError(ImageError), BoundingBoxError(BoundingBoxError < T >), EmptyBoundingBox, UnboundedBoundingBox, InvalidStep([T ; 2]) }` — _Error returned when rendering or saving a 2D generator as an image fails._
 
 ### Traits
 
-- `pub trait Image< T : Display >: Generator < [T ; 2] > { type Pixel; fn render_image(& self, step: [T ; 2]) -> Result < RenderedImage < Self :: Pixel > , ImageRenderError < T > >; fn save_image(& self, path: & Path, step: [T ; 2]) -> Result < () , ImageRenderError < T > >; }`
-- `pub trait IntoPixel { type Pixel; fn into_pixel(self) -> Self :: Pixel; }`
+- `pub trait Image< T : Display >: Generator < [T ; 2] > { type Pixel; fn render_image(& self, step: [T ; 2]) -> Result < RenderedImage < Self :: Pixel > , ImageRenderError < T > >; fn save_image(& self, path: & Path, step: [T ; 2]) -> Result < () , ImageRenderError < T > >; }` — _Renders bounded 2D generators to in-memory [`ImageBuffer`]s or image files on disk._
+- `pub trait IntoPixel { type Pixel; fn into_pixel(self) -> Self :: Pixel; }` — _Converts a generated color value into an `image` crate pixel._
 
 ### Type Aliases
 
-- `pub type RenderedImage< P > = ImageBuffer < P , Vec < < P as Pixel > :: Subpixel > >;`
+- `pub type RenderedImage< P > = ImageBuffer < P , Vec < < P as Pixel > :: Subpixel > >;` — _Owned `image::ImageBuffer` backed by a `Vec` of subpixels for pixel type `P`._
 
 ### Re-exports
 
@@ -37,6 +37,7 @@
 - `pub use euclidean::EuclideanVec;`
 - `pub use euclidean::EuclideanVecFloat;`
 - `pub use fbm::Fbm;`
+- `pub use perlin::FixedGradientTable;`
 - `pub use generator::Generator;`
 - `pub use perlin::GradientTable;`
 - `pub use perlin::ImprovedPerlin;`

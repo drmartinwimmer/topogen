@@ -13,10 +13,10 @@ Deterministic, composable N-dimensional spatial field and map generator for Rust
 
 ## Features
 
-- **Composable spatial generators**: Map, clamp, scale, translate, bound, and combine N-dimensional fields (`Map`, `MapInput`, `Clamp`, `Scale`, `Translate`, `Union`, `Fbm`, `Bitmap`, `DistanceMap`).
-- **Geometric primitives & spatial bounds**: `Sphere`, `Cuboid`, `BoundingBox`, and `Point` with `Bounded` spatial culling for efficient composition of localized features (such as tiles or biomes).
-- **Deterministic noise** (`noise` / `noise_fn` features): Seeded `ImprovedPerlin`, `Worley`, and `PermutationTable` generators built for reproducible results, plus optional `noise` crate integration.
-- **Image & color rendering** (`image` / `palette` features): Render 2D bounded generators directly to images.
+- **Composable spatial generators**: Map, zip, clamp, scale, translate, rotate, tile, domain-warp, bound, and combine N-dimensional fields (`Map`, `MapInput`, `Zip`, `Clamp`, `Scale`, `Translate`, `Rotate2D`, `Repeat`, `Warp`, `Union`, `Intersect`, `Fbm`, `Bitmap`, `DistanceMap`, `SignedDistanceMap`).
+- **Geometric primitives & spatial bounds**: `Sphere`, `Cuboid`, `BoundingBox`, and `Point` with exact unsigned and signed Euclidean distance fields and `Bounded` spatial culling for localized features.
+- **Deterministic noise** (`noise` / `noise_fn` features): Seeded `ImprovedPerlin` (with configurable `Interpolation`), `Worley`, and `PermutationTable` generators built for reproducible results, plus optional `noise` crate integration.
+- **Image & color rendering** (`image` / `palette` features): Render 2D bounded generators directly to in-memory `ImageBuffer`s or image files.
 - **Derive macros** (`topogen_derive`): `#[derive(Generator, Euclidean, Bounded, Center, Shape)]` for ergonomic wrapper types.
 
 ## Installation
@@ -41,7 +41,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         center: [0.0, 0.0],
     };
     let red_circle = circle.bitmap().map(|inside| {
-        if *inside {
+        if inside {
             image::Rgb([255_u8, 0, 0])
         } else {
             image::Rgb([0_u8, 0, 0])

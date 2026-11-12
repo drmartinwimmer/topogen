@@ -3,6 +3,7 @@ use crate::{
     traits::{Bounded, Coordinate, Euclidean, EuclideanVec, Generator},
 };
 
+/// Domain-warping operator displacing input coordinates by a vector-valued [`Generator`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Warp<E, W> {
     wrapped: E,
@@ -10,6 +11,7 @@ pub struct Warp<E, W> {
 }
 
 impl<E, W> Warp<E, W> {
+    /// Evaluates `wrapped` at `point + warp.generate(point)`.
     pub fn new(wrapped: E, warp: W) -> Self {
         Self { wrapped, warp }
     }

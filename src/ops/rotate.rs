@@ -4,6 +4,7 @@ use crate::{
 };
 use num_traits::Float;
 
+/// Rotates a 2D spatial object or generator counter-clockwise around the origin.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Rotate2D<E, T> {
     wrapped: E,
@@ -15,6 +16,7 @@ impl<E, T> Rotate2D<E, T>
 where
     T: Coordinate + Float,
 {
+    /// Rotates `wrapped` counter-clockwise by `angle` radians around `[0, 0]`.
     pub fn new(wrapped: E, angle: T) -> Self {
         let (sin, cos) = angle.sin_cos();
         Self { wrapped, sin, cos }

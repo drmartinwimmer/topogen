@@ -2,6 +2,7 @@ use num_traits::Float;
 
 use crate::traits::{Center, Coordinate, Euclidean, Generator};
 
+/// A radial sine-wave generator computing `sin(distance(point, center))`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Sin<T, const D: usize>
 where
@@ -14,6 +15,7 @@ impl<T, const D: usize> Sin<T, D>
 where
     T: Coordinate,
 {
+    /// Creates a radial sine wave centered at `center`.
     pub fn new(center: [T; D]) -> Self {
         Self { center }
     }

@@ -1,6 +1,7 @@
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 
-#[derive(Debug, Euclidean, Center, Bounded, Shape)]
+/// Transforms values produced by an inner [`Generator`] using a mapping closure.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean, Center, Bounded, Shape)]
 pub struct Map<G, F> {
     #[wrap]
     generator: G,
@@ -8,6 +9,7 @@ pub struct Map<G, F> {
 }
 
 impl<G, F> Map<G, F> {
+    /// Wraps `generator` so each output is transformed by `mapper`.
     pub fn new(generator: G, mapper: F) -> Self {
         Self { generator, mapper }
     }
@@ -25,13 +27,15 @@ where
     }
 }
 
-#[derive(Debug)]
+/// Adapts the input type of a [`Generator`] by mapping caller inputs before evaluation.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct MapInput<G, F> {
     generator: G,
     mapper: F,
 }
 
 impl<G, F> MapInput<G, F> {
+    /// Wraps `generator` so caller inputs are converted via `mapper`.
     pub fn new(generator: G, mapper: F) -> Self {
         Self { generator, mapper }
     }

@@ -10,6 +10,8 @@ use std::fmt::Debug;
 
 use super::PermutationTable;
 
+/// Seeded cellular (Worley / Voronoi) noise generator in `D`-dimensional Euclidean space.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Worley<G, T, const D: usize> {
     distance_gen: G,
     cell_size: [T; D],
@@ -38,6 +40,7 @@ where
     G::Output: Float + Debug,
     T: Coordinate + Zero + SampleUniform + Float,
 {
+    /// Creates a new `Worley` noise generator from a 32-byte seed, custom distance generator, and `cell_size`.
     pub fn new(seed: [u8; 32], distance_gen: G, cell_size: [T; D]) -> Self {
         let (pt_seed, perm_seed) = seed.split_at(16);
         let mut rng = Pcg32::from_seed(pt_seed.try_into().expect("16-byte seed slice"));
@@ -56,11 +59,13 @@ where
         }
     }
 
+    /// Returns a copy of this generator with the updated per-axis `cell_size`.
     pub fn set_cell_size(mut self, cell_size: [T; D]) -> Self {
         self.cell_size = cell_size;
         self
     }
 
+    /// Replaces the distance metric generator evaluated relative to each cell's feature point.
     pub fn set_distance_gen<N>(self, distance_gen: N) -> Worley<N, T, D> {
         Worley {
             distance_gen,

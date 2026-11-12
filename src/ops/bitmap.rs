@@ -1,9 +1,11 @@
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 use std::marker::PhantomData;
 
-#[derive(Debug, Euclidean, Bounded, Center, Shape)]
+/// Adapts a [`Bounded`] object into a boolean [`Generator`] returning `true` inside its domain.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Euclidean, Bounded, Center, Shape)]
 pub struct Bitmap<G, T, const D: usize> {
     i: PhantomData<[T; D]>,
+    /// Underlying bounded object queried via [`Bounded::within`].
     #[wrap]
     pub generator: G,
 }

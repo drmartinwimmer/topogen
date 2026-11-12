@@ -1,9 +1,12 @@
 use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Shape};
 
+/// An axis-aligned `D`-dimensional cuboid parameterized by `center` and half-size `extents`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Cuboid<T, const D: usize> {
+    /// Center coordinates of the cuboid.
     pub center: [T; D],
+    /// Half-extents along each axis (spanning `(center[i] - extents[i], center[i] + extents[i])`).
     pub extents: [T; D],
 }
 

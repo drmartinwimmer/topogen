@@ -1,9 +1,12 @@
 use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Shape};
 
+/// An `N`-dimensional Euclidean sphere (circle in 2D, ball in 3D).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Sphere<T, const D: usize> {
+    /// Radius of the sphere.
     pub radius: T,
+    /// Center coordinates of the sphere.
     pub center: [T; D],
 }
 
