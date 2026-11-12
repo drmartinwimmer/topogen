@@ -26,6 +26,15 @@ pub trait Generator<I>: Sized {
     fn clamp(self, min: Self::Output, max: Self::Output) -> ops::Clamp<Self, I> {
         ops::Clamp::new(self, min, max)
     }
+
+    fn zip<B, O, F>(self, other: B, combiner: F) -> ops::Zip<Self, B, F>
+    where
+        I: Copy,
+        B: Generator<I>,
+        F: Fn(Self::Output, B::Output) -> O,
+    {
+        ops::Zip::new(self, other, combiner)
+    }
 }
 
 #[cfg(test)]

@@ -4,6 +4,6 @@ mod perlin;
 mod permutation_table;
 mod worley;
 
-pub use perlin::ImprovedPerlin;
+pub use perlin::{GradientTable, ImprovedPerlin, Interpolation};
 pub use permutation_table::PermutationTable;
 pub use worley::Worley;
