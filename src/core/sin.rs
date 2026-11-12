@@ -44,13 +44,14 @@ where
 mod tests {
     use super::Sin;
     use crate::traits::{Euclidean, Generator};
+    use googletest::prelude::*;
     use std::f64::consts::{FRAC_2_PI, SQRT_2};
 
-    #[test]
-    fn generates_sin() {
+    #[googletest::test]
+    fn generates_sin_values() {
         let sin = Sin::new([0.0, 0.0]).scale([FRAC_2_PI, FRAC_2_PI]);
-        assert_eq!(sin.generate([0.0, 0.0]), 0.0);
-        assert_eq!(sin.generate([1.0, 0.0]), 1.0);
-        assert_eq!(sin.generate([SQRT_2 / 2.0, SQRT_2 / 2.0]), 1.0);
+        expect_that!(sin.generate([0.0, 0.0]), eq(0.0));
+        expect_that!(sin.generate([1.0, 0.0]), eq(1.0));
+        expect_that!(sin.generate([SQRT_2 / 2.0, SQRT_2 / 2.0]), eq(1.0));
     }
 }

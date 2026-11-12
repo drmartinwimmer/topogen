@@ -115,10 +115,11 @@ mod tests {
         shapes::Cuboid,
         traits::{Bounded, Generator},
     };
+    use googletest::prelude::*;
     use tempfile::Builder;
 
-    #[test]
-    fn saves_image() {
+    #[googletest::test]
+    fn saves_cuboid_image() -> Result<()> {
         let cuboid = Cuboid {
             extents: [2, 2],
             center: [0, 0],
@@ -127,11 +128,12 @@ mod tests {
             true => image::Rgb([255_u8, 255, 255]),
             false => image::Rgb([0_u8, 0, 0]),
         });
-        let tempfile = Builder::new().suffix(".png").tempfile().unwrap();
-        image.save_image(tempfile.path(), [1, 1]).unwrap();
+        let tempfile = Builder::new().suffix(".png").tempfile()?;
+        image.save_image(tempfile.path(), [1, 1])?;
 
-        let saved_image = image::open(tempfile.path()).unwrap();
-        assert_eq!(saved_image.width(), 4);
-        assert_eq!(saved_image.height(), 4);
+        let saved_image = image::open(tempfile.path())?;
+        expect_that!(saved_image.width(), eq(4));
+        expect_that!(saved_image.height(), eq(4));
+        Ok(())
     }
 }

@@ -42,25 +42,24 @@ impl<const D: usize> Generator<[u8; D]> for PermutationTable {
 mod tests {
     use super::PermutationTable;
     use crate::traits::Generator;
+    use googletest::prelude::*;
     use rand::SeedableRng;
 
-    #[test]
+    #[googletest::test]
     fn permutation_table_distributes_evenly_for_slice() {
         let pt = PermutationTable::seed_from_u64(12);
-        let mut output = [0; 256];
-        for i in 0..=255 {
-            output[i as usize] = pt.generate([i, 13]);
-        }
-        output.sort();
-        for (i, o) in output.iter().enumerate() {
-            assert_eq!(*o, i as u8);
+        let mut output: [u8; 256] =
+            std::array::from_fn(|i| pt.generate([u8::try_from(i).unwrap_or(0), 13]));
+        output.sort_unstable();
+        for (expected, actual) in (0_u8..=255).zip(output) {
+            expect_that!(actual, eq(expected));
         }
     }
 
-    #[test]
+    #[googletest::test]
     fn permutation_table_dimensions_are_independent() {
         let pt = PermutationTable::seed_from_u64(12);
-        assert_ne!(pt.generate([255, 254]), pt.generate([254, 255]));
-        assert_ne!(pt.generate([3, 8]), pt.generate([8, 3]));
+        expect_that!(pt.generate([255, 254]), not(eq(pt.generate([254, 255]))));
+        expect_that!(pt.generate([3, 8]), not(eq(pt.generate([8, 3]))));
     }
 }

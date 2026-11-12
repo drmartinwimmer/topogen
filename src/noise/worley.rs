@@ -152,12 +152,13 @@ mod tests {
             testing::Golden,
             traits::{Euclidean, Generator},
         };
-        use ::palette::{encoding, Hsl, RgbHue};
+        use ::palette::{Hsl, RgbHue, encoding};
+        use googletest::prelude::*;
         use rand::SeedableRng;
         use std::path::Path;
 
-        #[test]
-        fn worley_golden() {
+        #[googletest::test]
+        fn renders_worley_golden_image() -> Result<()> {
             let golden = Golden::new(Path::new("noise/worley.png"));
             let worley = Worley::seed_from_u64(12345)
                 .set_cell_size([50.0; 2])
@@ -166,8 +167,9 @@ mod tests {
                     center: [0.0; 2],
                     extents: [300.0; 2],
                 });
-            worley.save_image(golden.write_path(), [1.0; 2]).unwrap();
-            assert!(golden.is_identical());
+            worley.save_image(golden.write_path(), [1.0; 2])?;
+            expect_that!(golden.is_identical(), is_true());
+            Ok(())
         }
     }
 }

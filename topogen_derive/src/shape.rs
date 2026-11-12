@@ -33,10 +33,11 @@ pub fn shape(input: DeriveInput) -> TokenStream {
 #[cfg(test)]
 mod tests {
     use super::shape;
+    use googletest::prelude::*;
     use quote::quote;
     use syn::parse_quote;
 
-    #[test]
+    #[googletest::test]
     fn shape_works_with_generics() {
         let input = parse_quote! {
             #[derive(Euclidean)]
@@ -64,6 +65,6 @@ mod tests {
             }
         };
         let output = shape(input);
-        assert_eq!(expected.to_string(), output.to_string());
+        expect_that!(output.to_string(), eq(&expected.to_string()));
     }
 }

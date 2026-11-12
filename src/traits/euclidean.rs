@@ -195,13 +195,14 @@ pub trait Euclidean<T: Coordinate, const D: usize>: Sized {
 #[cfg(test)]
 mod tests {
     use super::WrapToU8;
+    use googletest::prelude::*;
 
-    #[test]
+    #[googletest::test]
     fn wrap_to_u8_works_for_negative() {
-        assert_eq!((-2.0).wrap_to_u8(), 254);
-        assert_eq!((-1.0).wrap_to_u8(), 255);
-        assert_eq!((-0.5).wrap_to_u8(), 255);
-        assert_eq!((0.0).wrap_to_u8(), 0);
+        expect_that!((-2.0).wrap_to_u8(), eq(254));
+        expect_that!((-1.0).wrap_to_u8(), eq(255));
+        expect_that!((-0.5).wrap_to_u8(), eq(255));
+        expect_that!((0.0).wrap_to_u8(), eq(0));
     }
 }
 

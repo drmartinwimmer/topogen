@@ -60,17 +60,18 @@ mod tests {
         shapes::Cuboid,
         traits::{Bounded, Euclidean, Generator},
     };
+    use googletest::prelude::*;
 
-    #[test]
-    fn translates_generator() {
+    #[googletest::test]
+    fn translates_cuboid_generator() {
         let cube_map = Cuboid {
             center: [0, 0],
             extents: [2, 2],
         }
         .bitmap();
         let scaled = cube_map.translate([3, 3]);
-        assert!(scaled.generate([2, 2]));
-        assert!(scaled.generate([4, 4]));
-        assert!(!scaled.generate([1, 1]));
+        expect_that!(scaled.generate([2, 2]), is_true());
+        expect_that!(scaled.generate([4, 4]), is_true());
+        expect_that!(scaled.generate([1, 1]), is_false());
     }
 }
