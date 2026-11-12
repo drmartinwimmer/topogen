@@ -2,6 +2,7 @@ use crate::{
     shapes::{BoundingBox, BoundingBoxError},
     traits::{Bounded, Coordinate, Euclidean, Generator, Shape},
 };
+use num_traits::Float;
 
 #[derive(Debug)]
 pub struct Union<G, F, T, const D: usize>
@@ -82,12 +83,12 @@ where
 {
     fn distance(&self, point: [T; D]) -> T
     where
-        T: num_traits::Float,
+        T: Float,
     {
         self.elements
             .iter()
             .map(|e| e.distance(point))
-            .reduce(|a, b| a.min(b))
+            .reduce(Float::min)
             .unwrap_or(T::infinity())
     }
 }
@@ -100,14 +101,15 @@ pub enum Error<T: std::fmt::Display> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Union};
+    use super::Union;
     use crate::{
         shapes::Cuboid,
         traits::{Bounded, Generator},
     };
+    use googletest::prelude::*;
 
-    #[test]
-    fn generator_union_works() -> Result<(), Error<i32>> {
+    #[googletest::test]
+    fn generator_union_works() -> Result<()> {
         let left_cube = Cuboid {
             center: [-2, 0, 0],
             ..Default::default()
@@ -118,9 +120,9 @@ mod tests {
         };
         let combined_bitmap =
             Union::new(vec![left_cube.bitmap(), right_cube.bitmap()], |a, b| a | b)?;
-        assert!(!combined_bitmap.generate([-1, 0, 0]));
-        assert!(!combined_bitmap.generate([0, 0, 0]));
-        assert!(!combined_bitmap.generate([1, 0, 0]));
+        expect_that!(combined_bitmap.generate([-1, 0, 0]), is_false());
+        expect_that!(combined_bitmap.generate([0, 0, 0]), is_false());
+        expect_that!(combined_bitmap.generate([1, 0, 0]), is_false());
         Ok(())
     }
 }

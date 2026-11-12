@@ -18,7 +18,11 @@ struct Perlin<T: Coordinate + Float, const D: usize, G: GradientTable<T, D>> {
     _output: PhantomData<T>,
 }
 
-#[allow(dead_code)]
+// Retained alongside quintic interpolation as the classic Perlin smoothstep curve.
+#[expect(
+    dead_code,
+    reason = "Retained as a standard Perlin smoothstep interpolation curve alongside quintic"
+)]
 fn interpolate_smoothstep<T: Coordinate + Float>(a: T, b: T, x: T) -> T {
     let two = T::one() + T::one();
     let three = two + T::one();
@@ -77,13 +81,16 @@ impl<T: Coordinate + Float + WrapToU8, const D: usize, G: GradientTable<T, D>> P
         //         corner, point, d
         //     );
         // }
-        if d == D {
+        let (Some(&point_d), Some(&corner_d)) = (point.get(d), corner.get(d)) else {
             return self.get_corner_value(corner, point);
-        }
+        };
         let a = self.get_corner_value_d(corner, point, d + 1, interpolate);
-        corner[d] += T::one();
+        let corner_next = corner_d + T::one();
+        if let Some(slot) = corner.get_mut(d) {
+            *slot = corner_next;
+        }
         let b = self.get_corner_value_d(corner, point, d + 1, interpolate);
-        interpolate(a, b, point[d] + T::one() - corner[d])
+        interpolate(a, b, point_d + T::one() - corner_next)
     }
 
     pub fn generate(&self, point: [T; D], interpolate: fn(T, T, T) -> T) -> T {
@@ -185,12 +192,13 @@ mod tests {
             testing::Golden,
             traits::{Euclidean, Generator},
         };
-        use ::palette::{encoding, Hsl, RgbHue};
+        use ::palette::{Hsl, RgbHue, encoding};
+        use googletest::prelude::*;
         use rand::SeedableRng;
         use std::path::Path;
 
-        #[test]
-        fn improved_perlin_golden() {
+        #[googletest::test]
+        fn improved_perlin_golden() -> Result<()> {
             let golden = Golden::new(Path::new("noise/improved_perlin.png"));
             let perlin = ImprovedPerlin::seed_from_u64(12345)
                 .scale([10.0; 2])
@@ -199,8 +207,9 @@ mod tests {
                     center: [0.0; 2],
                     extents: [300.0; 2],
                 });
-            perlin.save_image(golden.write_path(), [1.0; 2]).unwrap();
-            assert!(golden.is_identical());
+            perlin.save_image(golden.write_path(), [1.0; 2])?;
+            expect_that!(golden.is_identical(), is_true());
+            Ok(())
         }
     }
 }

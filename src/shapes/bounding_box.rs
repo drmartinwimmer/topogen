@@ -19,16 +19,16 @@ where
 
     pub fn new_offset(offset: [T; D], size: [T; D]) -> Self {
         let mut bounding_box = [DimensionBound::Unbounded; D];
-        for i in 0..D {
-            bounding_box[i] = DimensionBound::Range(offset[i], offset[i] + size[i]);
+        for (bound, (o, s)) in bounding_box.iter_mut().zip(offset.into_iter().zip(size)) {
+            *bound = DimensionBound::Range(o, o + s);
         }
         Self::Bounded(bounding_box)
     }
 
     pub fn new_centered(center: [T; D], extents: [T; D]) -> Self {
         let mut bounding_box = [DimensionBound::Unbounded; D];
-        for i in 0..D {
-            bounding_box[i] = DimensionBound::Range(center[i] - extents[i], center[i] + extents[i]);
+        for (bound, (c, e)) in bounding_box.iter_mut().zip(center.into_iter().zip(extents)) {
+            *bound = DimensionBound::Range(c - e, c + e);
         }
         Self::Bounded(bounding_box)
     }
@@ -70,8 +70,8 @@ where
             (BoundingBox::Empty, other) | (other, BoundingBox::Empty) => Ok(other.clone()),
             (BoundingBox::Bounded(b1), BoundingBox::Bounded(b2)) => {
                 let mut union = [DimensionBound::Empty; D];
-                for i in 0..D {
-                    union[i] = b1[i].for_union(b2[i])?;
+                for (out, (d1, d2)) in union.iter_mut().zip(b1.iter().zip(b2.iter())) {
+                    *out = d1.for_union(*d2)?;
                 }
                 BoundingBox::new_bounded(union)
             }
@@ -84,8 +84,8 @@ where
             (BoundingBox::Empty, _) | (_, BoundingBox::Empty) => Ok(BoundingBox::Empty),
             (BoundingBox::Bounded(b1), BoundingBox::Bounded(b2)) => {
                 let mut intersect = [DimensionBound::Unbounded; D];
-                for i in 0..D {
-                    intersect[i] = b1[i].for_intersect(b2[i])?;
+                for (out, (d1, d2)) in intersect.iter_mut().zip(b1.iter().zip(b2.iter())) {
+                    *out = d1.for_intersect(*d2)?;
                 }
                 BoundingBox::new_bounded(intersect)
             }
@@ -119,19 +119,14 @@ where
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum DimensionBound<T> {
+    #[default]
     Empty,
     Unbounded,
     Min(T),
     Max(T),
     Range(T, T),
-}
-
-impl<T> Default for DimensionBound<T> {
-    fn default() -> Self {
-        Self::Empty
-    }
 }
 
 fn min<T>(a: T, b: T) -> Result<T, Error<T>>
@@ -260,35 +255,38 @@ pub enum Error<T: Display> {
 #[cfg(test)]
 mod tests {
     use super::BoundingBox;
+    use googletest::prelude::*;
 
-    #[test]
+    #[googletest::test]
     fn new_bound_works() {
         let bound = BoundingBox::new_offset([15, 15], [10, 10]);
-        assert!(bound.within([16, 16]));
-        assert!(bound.within([24, 24]));
-        assert!(!bound.within([25, 16]));
-        assert!(!bound.within([15, 25]));
-        assert!(!bound.within([15, 16]));
+        expect_that!(bound.within([16, 16]), is_true());
+        expect_that!(bound.within([24, 24]), is_true());
+        expect_that!(bound.within([25, 16]), is_false());
+        expect_that!(bound.within([15, 25]), is_false());
+        expect_that!(bound.within([15, 16]), is_false());
     }
 
-    #[test]
-    fn for_union_works() {
+    #[googletest::test]
+    fn for_union_works() -> Result<()> {
         let bound = BoundingBox::new_offset([15, 15], [10, 10]);
         let bound2 = BoundingBox::new_offset([10, 10], [10, 10]);
-        let union = bound.for_union(&bound2).unwrap();
-        assert!(union.within([11, 11]));
-        assert!(union.within([24, 24]));
-        assert!(!union.within([25, 15]));
-        assert!(!union.within([10, 15]));
+        let union = bound.for_union(&bound2)?;
+        expect_that!(union.within([11, 11]), is_true());
+        expect_that!(union.within([24, 24]), is_true());
+        expect_that!(union.within([25, 15]), is_false());
+        expect_that!(union.within([10, 15]), is_false());
+        Ok(())
     }
 
-    #[test]
-    fn for_intersection_works() {
+    #[googletest::test]
+    fn for_intersection_works() -> Result<()> {
         let bound = BoundingBox::new_offset([15, 15], [10, 10]);
         let bound2 = BoundingBox::new_offset([10, 10], [10, 10]);
-        let inter = bound.for_intersect(&bound2).unwrap();
-        assert!(!inter.within([11, 11]));
-        assert!(inter.within([16, 16]));
-        assert!(!inter.within([20, 19]));
+        let inter = bound.for_intersect(&bound2)?;
+        expect_that!(inter.within([11, 11]), is_false());
+        expect_that!(inter.within([16, 16]), is_true());
+        expect_that!(inter.within([20, 19]), is_false());
+        Ok(())
     }
 }

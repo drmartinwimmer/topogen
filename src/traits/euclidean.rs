@@ -120,13 +120,29 @@ pub trait WrapToU8 {
 
 impl WrapToU8 for f32 {
     fn wrap_to_u8(self) -> u8 {
-        self.rem_euclid(256.0) as u8
+        // rem_euclid(256.0) bounds finite values into 0.0..256.0 prior to integer conversion.
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "rem_euclid(256.0) bounds the value to 0.0..256.0 before integer conversion"
+        )]
+        {
+            self.rem_euclid(256.0) as u8
+        }
     }
 }
 
 impl WrapToU8 for f64 {
     fn wrap_to_u8(self) -> u8 {
-        self.rem_euclid(256.0) as u8
+        // rem_euclid(256.0) bounds finite values into 0.0..256.0 prior to integer conversion.
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "rem_euclid(256.0) bounds the value to 0.0..256.0 before integer conversion"
+        )]
+        {
+            self.rem_euclid(256.0) as u8
+        }
     }
 }
 
@@ -179,13 +195,14 @@ pub trait Euclidean<T: Coordinate, const D: usize>: Sized {
 #[cfg(test)]
 mod tests {
     use super::WrapToU8;
+    use googletest::prelude::*;
 
-    #[test]
+    #[googletest::test]
     fn wrap_to_u8_works_for_negative() {
-        assert_eq!((-2.0).wrap_to_u8(), 254);
-        assert_eq!((-1.0).wrap_to_u8(), 255);
-        assert_eq!((-0.5).wrap_to_u8(), 255);
-        assert_eq!((0.0).wrap_to_u8(), 0);
+        expect_that!((-2.0).wrap_to_u8(), eq(254));
+        expect_that!((-1.0).wrap_to_u8(), eq(255));
+        expect_that!((-0.5).wrap_to_u8(), eq(255));
+        expect_that!((0.0).wrap_to_u8(), eq(0));
     }
 }
 

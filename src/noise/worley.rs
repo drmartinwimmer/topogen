@@ -4,7 +4,7 @@ use crate::{
     traits::{Center, Coordinate, Euclidean, EuclideanVec, EuclideanVecFloat, Generator, WrapToU8},
 };
 use num_traits::{Float, One, Zero};
-use rand::{distributions::uniform::SampleUniform, Rng, SeedableRng};
+use rand::{Rng, SeedableRng, distributions::uniform::SampleUniform};
 use rand_pcg::Pcg32;
 use std::fmt::Debug;
 
@@ -39,8 +39,8 @@ where
     T: Coordinate + Zero + SampleUniform + Float,
 {
     pub fn new(seed: [u8; 32], distance_gen: G, cell_size: [T; D]) -> Self {
-        let pt_seed: [u8; 16] = seed[0..16].try_into().unwrap();
-        let mut rng = Pcg32::from_seed(pt_seed);
+        let (pt_seed, perm_seed) = seed.split_at(16);
+        let mut rng = Pcg32::from_seed(pt_seed.try_into().expect("16-byte seed slice"));
         let mut positions = [[T::zero(); D]; 256];
         positions.iter_mut().for_each(|p| {
             p.iter_mut()
@@ -49,7 +49,9 @@ where
         Self {
             distance_gen,
             cell_size,
-            permutation_table: PermutationTable::from_seed(seed[16..32].try_into().unwrap()),
+            permutation_table: PermutationTable::from_seed(
+                perm_seed.try_into().expect("16-byte seed slice"),
+            ),
             offsets: positions,
         }
     }
@@ -70,12 +72,13 @@ where
 
     fn get_distance_for_cell(&self, cell: [u8; D], mut point: [T; D]) -> (G::Output, u8) {
         let index = self.permutation_table.generate(cell);
-        let offsets = &self.offsets[index as usize];
-        point
-            .iter_mut()
-            .zip(offsets)
-            .zip(self.cell_size)
-            .for_each(|((p, o), s)| *p -= *o * s);
+        if let Some(offsets) = self.offsets.get(usize::from(index)) {
+            point
+                .iter_mut()
+                .zip(offsets)
+                .zip(self.cell_size)
+                .for_each(|((p, o), s)| *p -= *o * s);
+        }
         (self.distance_gen.generate(point), index)
     }
 
@@ -85,17 +88,25 @@ where
         mut point: [T; D],
         d: usize,
     ) -> (G::Output, u8) {
-        if d == D {
+        let (Some(&cell_d), Some(&point_d), Some(&cell_size_d)) =
+            (cell.get(d), point.get(d), self.cell_size.get(d))
+        else {
             return self.get_distance_for_cell(cell, point);
-        }
-        let cell_d = cell[d];
-        let point_d = point[d];
+        };
         let baseline = self.get_combined_distance_for_cell_d(cell, point, d + 1);
-        cell[d] = cell_d.wrapping_add(1);
-        point[d] = point_d - self.cell_size[d];
+        if let Some(slot) = cell.get_mut(d) {
+            *slot = cell_d.wrapping_add(1);
+        }
+        if let Some(slot) = point.get_mut(d) {
+            *slot = point_d - cell_size_d;
+        }
         let right = self.get_combined_distance_for_cell_d(cell, point, d + 1);
-        cell[d] = cell_d.wrapping_sub(1);
-        point[d] = point_d + self.cell_size[d];
+        if let Some(slot) = cell.get_mut(d) {
+            *slot = cell_d.wrapping_sub(1);
+        }
+        if let Some(slot) = point.get_mut(d) {
+            *slot = point_d + cell_size_d;
+        }
         let left = self.get_combined_distance_for_cell_d(cell, point, d + 1);
         let min = match left.0 < baseline.0 {
             true => left,
@@ -141,12 +152,13 @@ mod tests {
             testing::Golden,
             traits::{Euclidean, Generator},
         };
-        use ::palette::{encoding, Hsl, RgbHue};
+        use ::palette::{Hsl, RgbHue, encoding};
+        use googletest::prelude::*;
         use rand::SeedableRng;
         use std::path::Path;
 
-        #[test]
-        fn worley_golden() {
+        #[googletest::test]
+        fn renders_worley_golden_image() -> Result<()> {
             let golden = Golden::new(Path::new("noise/worley.png"));
             let worley = Worley::seed_from_u64(12345)
                 .set_cell_size([50.0; 2])
@@ -155,8 +167,9 @@ mod tests {
                     center: [0.0; 2],
                     extents: [300.0; 2],
                 });
-            worley.save_image(golden.write_path(), [1.0; 2]).unwrap();
-            assert!(golden.is_identical());
+            worley.save_image(golden.write_path(), [1.0; 2])?;
+            expect_that!(golden.is_identical(), is_true());
+            Ok(())
         }
     }
 }

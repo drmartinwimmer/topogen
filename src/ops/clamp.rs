@@ -6,7 +6,7 @@ where
     G: Generator<I>,
 {
     #[wrap]
-    gen: G,
+    generator: G,
     min: G::Output,
     max: G::Output,
 }
@@ -15,8 +15,12 @@ impl<G, I> Clamp<G, I>
 where
     G: Generator<I>,
 {
-    pub fn new(gen: G, min: G::Output, max: G::Output) -> Self {
-        Self { gen, min, max }
+    pub fn new(generator: G, min: G::Output, max: G::Output) -> Self {
+        Self {
+            generator,
+            min,
+            max,
+        }
     }
 }
 
@@ -28,7 +32,7 @@ where
     type Output = G::Output;
 
     fn generate(&self, input: I) -> Self::Output {
-        let out = self.gen.generate(input);
+        let out = self.generator.generate(input);
         if out < self.min {
             self.min
         } else if out > self.max {

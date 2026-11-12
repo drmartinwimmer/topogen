@@ -1,3 +1,4 @@
+use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator, Shape};
 
 #[derive(Clone)]
@@ -30,7 +31,7 @@ where
         self.referenced.within(input)
     }
 
-    fn bounding_box(&self) -> crate::shapes::BoundingBox<T, D> {
+    fn bounding_box(&self) -> BoundingBox<T, D> {
         self.referenced.bounding_box()
     }
 }

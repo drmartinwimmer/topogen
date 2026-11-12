@@ -1,9 +1,8 @@
 use super::IntoPixel;
 use palette::{
-    encoding,
+    Hsl, Hsla, IntoColor, Srgb, Srgba, encoding,
     rgb::{Rgb, Rgba},
     stimulus::IntoStimulus,
-    Hsl, Hsla, IntoColor, Srgb, Srgba,
 };
 
 impl<T: IntoStimulus<u8>> IntoPixel for Rgb<encoding::Srgb, T> {
@@ -45,11 +44,12 @@ mod tests {
     use crate::image::Image;
     use crate::shapes::Cuboid;
     use crate::traits::{Bounded, Generator};
+    use googletest::prelude::*;
     use palette::{Hsl, RgbHue};
     use tempfile::Builder;
 
-    #[test]
-    fn saves_image_with_palette() {
+    #[googletest::test]
+    fn saves_image_with_palette() -> Result<()> {
         let cuboid = Cuboid {
             extents: [2, 2],
             center: [0, 0],
@@ -58,11 +58,12 @@ mod tests {
             true => Hsl::new(RgbHue::new(0.3), 0.5_f32, 1.0),
             false => Hsl::new(RgbHue::new(0.3), 0.5, 0.0),
         });
-        let tempfile = Builder::new().suffix(".png").tempfile().unwrap();
-        image.save_image(tempfile.path(), [1, 1]).unwrap();
+        let tempfile = Builder::new().suffix(".png").tempfile()?;
+        image.save_image(tempfile.path(), [1, 1])?;
 
-        let saved_image = image::open(tempfile.path()).unwrap();
-        assert_eq!(saved_image.width(), 4);
-        assert_eq!(saved_image.height(), 4);
+        let saved_image = image::open(tempfile.path())?;
+        expect_that!(saved_image.width(), eq(4));
+        expect_that!(saved_image.height(), eq(4));
+        Ok(())
     }
 }

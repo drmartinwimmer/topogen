@@ -1,7 +1,7 @@
 use crate::helpers::{create_forward_generics, expand_generics, find_wrapped};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_quote, DeriveInput};
+use syn::{DeriveInput, parse_quote};
 
 pub fn euclidean(input: DeriveInput) -> TokenStream {
     let name = &input.ident;
@@ -28,10 +28,11 @@ pub fn euclidean(input: DeriveInput) -> TokenStream {
 #[cfg(test)]
 mod tests {
     use super::euclidean;
+    use googletest::prelude::*;
     use quote::quote;
     use syn::parse_quote;
 
-    #[test]
+    #[googletest::test]
     fn euclidean_works_with_generics() {
         let input = parse_quote! {
             #[derive(Euclidean)]
@@ -55,10 +56,10 @@ mod tests {
             }
         };
         let output = euclidean(input);
-        assert_eq!(expected.to_string(), output.to_string());
+        expect_that!(output.to_string(), eq(&expected.to_string()));
     }
 
-    #[test]
+    #[googletest::test]
     fn euclidean_works_without_generics() {
         let input = parse_quote! {
             #[derive(Euclidean)]
@@ -76,6 +77,6 @@ mod tests {
             }
         };
         let output = euclidean(input);
-        assert_eq!(expected.to_string(), output.to_string());
+        expect_that!(output.to_string(), eq(&expected.to_string()));
     }
 }

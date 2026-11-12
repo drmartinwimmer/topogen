@@ -1,12 +1,12 @@
-extern crate topogen;
 extern crate image;
+extern crate topogen;
 
+use std::path::Path;
 use topogen::{
     image::Image,
     shapes::Sphere,
     traits::{Bounded, Generator},
 };
-use std::path::Path;
 
 fn main() {
     let circle = Sphere {
@@ -19,5 +19,5 @@ fn main() {
     });
     red_circle
         .save_image(Path::new("circle.png"), [0.1, 0.1])
-        .unwrap();
+        .expect("failed to save circle image");
 }

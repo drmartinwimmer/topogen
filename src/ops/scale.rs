@@ -1,3 +1,4 @@
+use crate::shapes::BoundingBox;
 use crate::traits::{Bounded, Center, Coordinate, Euclidean, Generator};
 
 #[derive(Debug, Euclidean)]
@@ -30,7 +31,7 @@ where
         self.wrapped.within(input)
     }
 
-    fn bounding_box(&self) -> crate::shapes::BoundingBox<T, D> {
+    fn bounding_box(&self) -> BoundingBox<T, D> {
         self.wrapped.bounding_box().scale(self.scale)
     }
 }
@@ -72,17 +73,18 @@ mod tests {
         shapes::Cuboid,
         traits::{Bounded, Euclidean, Generator},
     };
+    use googletest::prelude::*;
 
-    #[test]
-    fn scales_generator() {
+    #[googletest::test]
+    fn scales_cuboid_generator() {
         let cube_map = Cuboid {
             center: [0, 0],
             extents: [1, 1],
         }
         .bitmap();
         let scaled = cube_map.scale([3, 3]);
-        assert!(scaled.generate([2, 2]));
-        assert!(scaled.generate([-2, -2]));
-        assert!(!scaled.generate([3, 3]));
+        expect_that!(scaled.generate([2, 2]), is_true());
+        expect_that!(scaled.generate([-2, -2]), is_true());
+        expect_that!(scaled.generate([3, 3]), is_false());
     }
 }
