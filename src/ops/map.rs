@@ -16,7 +16,7 @@ impl<G, F> Map<G, F> {
 impl<G, F, I, O> Generator<I> for Map<G, F>
 where
     G: Generator<I>,
-    F: Fn(G::Output) -> O + Clone,
+    F: Fn(G::Output) -> O,
 {
     type Output = O;
 
@@ -32,7 +32,7 @@ pub struct MapInput<G, F> {
 }
 
 impl<G, F> MapInput<G, F> {
-    pub(crate) fn new(generator: G, mapper: F) -> Self {
+    pub fn new(generator: G, mapper: F) -> Self {
         Self { generator, mapper }
     }
 }
@@ -40,7 +40,7 @@ impl<G, F> MapInput<G, F> {
 impl<G, F, I, GI> Generator<I> for MapInput<G, F>
 where
     G: Generator<GI>,
-    F: Fn(I) -> GI + Clone,
+    F: Fn(I) -> GI,
 {
     type Output = G::Output;
 
@@ -59,8 +59,10 @@ where
 #[cfg(test)]
 mod tests {
     use crate::core::Constant;
-    use crate::traits::{ByRef, Generator};
+    use crate::shapes::Sphere;
+    use crate::traits::{Bounded, ByRef, Generator};
     use googletest::prelude::*;
+    use std::cell::Cell;
 
     #[googletest::test]
     fn map_by_value_works() {
@@ -82,5 +84,30 @@ mod tests {
         let mapped = generator.by_ref().map(|x| x + 1);
         expect_that!(mapped.generate(0), eq(2));
         expect_that!(generator.generate(0), eq(1));
+    }
+
+    #[googletest::test]
+    fn map_supports_non_clone_closure() {
+        struct NonCloneOffset(i32);
+        let offset = NonCloneOffset(5);
+        let counter = Cell::new(0_usize);
+        let mapped = Constant::new(10).map(|x| {
+            counter.set(counter.get() + 1);
+            x + offset.0
+        });
+        expect_that!(mapped.generate(0), eq(15));
+        expect_that!(counter.get(), eq(1));
+    }
+
+    #[googletest::test]
+    fn map_input_adapts_coordinate_type_and_dimension() {
+        let circle = Sphere {
+            radius: 5.0_f64,
+            center: [0.0, 0.0],
+        }
+        .bitmap();
+        let grid_slice = circle.map_input(|[x, y, _z]: [i32; 3]| [f64::from(x), f64::from(y)]);
+        expect_that!(grid_slice.generate([3, 3, 99]), is_true());
+        expect_that!(grid_slice.generate([4, 4, 99]), is_false());
     }
 }

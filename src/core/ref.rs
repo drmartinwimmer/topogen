@@ -58,3 +58,27 @@ where
         self.referenced.distance(point)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        shapes::Sphere,
+        traits::{Bounded, ByRef, Center, Generator, Shape},
+    };
+    use googletest::prelude::*;
+
+    #[googletest::test]
+    fn ref_forwards_spatial_and_generator_traits() {
+        let sphere = Sphere {
+            radius: 3.0_f64,
+            center: [1.0, -1.0],
+        };
+        let borrowed = sphere.by_ref();
+        expect_that!(borrowed.center(), eq([1.0, -1.0]));
+        expect_that!(borrowed.within([2.0, -1.0]), is_true());
+        expect_that!(borrowed.distance([5.0, -1.0]), eq(1.0));
+        let bitmap = sphere.by_ref().bitmap();
+        expect_that!(bitmap.generate([2.0, -1.0]), is_true());
+        expect_that!(sphere.within([2.0, -1.0]), is_true());
+    }
+}

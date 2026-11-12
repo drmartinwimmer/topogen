@@ -15,10 +15,10 @@ pub trait Generator<I>: Sized {
         ops::Map::new(self, f)
     }
 
-    fn map_input<O, F>(self, f: F) -> ops::MapInput<Self, F>
+    fn map_input<NI, F>(self, f: F) -> ops::MapInput<Self, F>
     where
         Self: Sized,
-        F: Fn(I) -> O,
+        F: Fn(NI) -> I,
     {
         ops::MapInput::new(self, f)
     }

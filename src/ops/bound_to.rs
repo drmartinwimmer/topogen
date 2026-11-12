@@ -77,3 +77,25 @@ where
         self.wrapped.generate(point)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        core::Constant,
+        shapes::Cuboid,
+        traits::{Bounded, Euclidean, Generator},
+    };
+    use googletest::prelude::*;
+
+    #[googletest::test]
+    fn bound_to_returns_default_outside_bounds() {
+        let bounded = Constant::new(9_i32).bound_to(Cuboid {
+            center: [0, 0],
+            extents: [3, 3],
+        });
+        expect_that!(bounded.within([2, 2]), is_true());
+        expect_that!(bounded.within([3, 2]), is_false());
+        expect_that!(bounded.generate([2, -2]), eq(9));
+        expect_that!(bounded.generate([3, 0]), eq(0));
+    }
+}

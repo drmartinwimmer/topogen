@@ -20,7 +20,7 @@ where
     T: Coordinate,
     G: Bounded<T, D>,
 {
-    pub fn new(elements: Vec<G>, reducer: F) -> Result<Self, Error<T>> {
+    pub fn new(elements: Vec<G>, reducer: F) -> Result<Self, UnionError<T>> {
         let mut bounding_box = BoundingBox::Empty;
         for element in &elements {
             bounding_box = bounding_box.for_union(&element.bounding_box())?;
@@ -38,7 +38,7 @@ where
     T: Coordinate,
     G: Bounded<T, D> + Generator<[T; D]>,
     G::Output: Default,
-    F: Fn(G::Output, G::Output) -> G::Output + Clone,
+    F: Fn(G::Output, G::Output) -> G::Output,
 {
     type Output = G::Output;
 
@@ -68,7 +68,7 @@ where
     G: Bounded<T, D>,
 {
     fn within(&self, input: [T; D]) -> bool {
-        self.bounding_box.within(input) && self.elements.iter().all(|e| e.within(input))
+        self.bounding_box.within(input) && self.elements.iter().any(|e| e.within(input))
     }
 
     fn bounding_box(&self) -> BoundingBox<T, D> {
@@ -94,7 +94,7 @@ where
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum Error<T: std::fmt::Display> {
+pub enum UnionError<T: std::fmt::Display> {
     #[error("Bounding box operation failed: {0:?}")]
     UpperBoundFailed(#[from] BoundingBoxError<T>),
 }
@@ -112,17 +112,39 @@ mod tests {
     fn generator_union_works() -> Result<()> {
         let left_cube = Cuboid {
             center: [-2, 0, 0],
-            ..Default::default()
+            extents: [2, 2, 2],
         };
         let right_cube = Cuboid {
             center: [2, 0, 0],
-            ..Default::default()
+            extents: [2, 2, 2],
         };
         let combined_bitmap =
             Union::new(vec![left_cube.bitmap(), right_cube.bitmap()], |a, b| a | b)?;
-        expect_that!(combined_bitmap.generate([-1, 0, 0]), is_false());
+        expect_that!(combined_bitmap.generate([-2, 0, 0]), is_true());
+        expect_that!(combined_bitmap.generate([2, 0, 0]), is_true());
         expect_that!(combined_bitmap.generate([0, 0, 0]), is_false());
-        expect_that!(combined_bitmap.generate([1, 0, 0]), is_false());
+        expect_that!(combined_bitmap.generate([-4, 0, 0]), is_false());
+        expect_that!(combined_bitmap.generate([4, 0, 0]), is_false());
+        Ok(())
+    }
+
+    #[googletest::test]
+    fn union_within_matches_any_element() -> Result<()> {
+        let left_cube = Cuboid {
+            center: [-3, 0],
+            extents: [2, 2],
+        };
+        let right_cube = Cuboid {
+            center: [3, 0],
+            extents: [2, 2],
+        };
+        let combined = Union::new(
+            vec![left_cube.bitmap(), right_cube.bitmap()],
+            |a: bool, b: bool| a | b,
+        )?;
+        expect_that!(combined.within([-3, 0]), is_true());
+        expect_that!(combined.within([3, 0]), is_true());
+        expect_that!(combined.within([0, 0]), is_false());
         Ok(())
     }
 }

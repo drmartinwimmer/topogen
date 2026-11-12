@@ -19,5 +19,5 @@ pub use map::{Map, MapInput};
 //pub use repeat::Repeat;
 pub use scale::Scale;
 pub use translate::Translate;
-pub use union::{Error as UnionError, Union};
+pub use union::{Union, UnionError};
 pub use with_bounding_box::WithBoundingBox;

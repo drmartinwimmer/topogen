@@ -10,7 +10,7 @@ use std::fmt::Display;
 use std::path::Path;
 
 pub trait Image<T: Display>: Generator<[T; 2]> {
-    fn save_image(self, path: &Path, step: [T; 2]) -> Result<(), Error<T>>;
+    fn save_image(self, path: &Path, step: [T; 2]) -> Result<(), ImageRenderError<T>>;
 }
 
 pub trait IntoPixel {
@@ -55,17 +55,17 @@ where
     C::Pixel: PixelWithColorType,
     [<C::Pixel as Pixel>::Subpixel]: EncodableLayout,
 {
-    fn save_image(self, path: &Path, step: [T; 2]) -> Result<(), Error<T>> {
+    fn save_image(self, path: &Path, step: [T; 2]) -> Result<(), ImageRenderError<T>> {
         let bounds = match self.bounding_box() {
-            BoundingBox::Empty => return Err(Error::EmptyBoundingBox),
-            BoundingBox::Unbounded => return Err(Error::UnboundedBoundingBox),
+            BoundingBox::Empty => return Err(ImageRenderError::EmptyBoundingBox),
+            BoundingBox::Unbounded => return Err(ImageRenderError::UnboundedBoundingBox),
             BoundingBox::Bounded(bounds) => bounds,
         };
         let extract_range = |bound: DimensionBound<T>| match bound {
             DimensionBound::Range(min, max) => Ok((min, max)),
-            DimensionBound::Empty => Err(Error::EmptyBoundingBox),
+            DimensionBound::Empty => Err(ImageRenderError::EmptyBoundingBox),
             DimensionBound::Unbounded | DimensionBound::Min(_) | DimensionBound::Max(_) => {
-                Err(Error::UnboundedBoundingBox)
+                Err(ImageRenderError::UnboundedBoundingBox)
             }
         };
         let [bound_x, bound_y] = bounds;
@@ -97,7 +97,7 @@ where
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum Error<T: Display> {
+pub enum ImageRenderError<T: Display> {
     #[error("Image Error {0:?}")]
     ImageError(#[from] ImageError),
     #[error("Computing bounds failed")]
